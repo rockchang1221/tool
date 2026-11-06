@@ -1,0 +1,83 @@
+<!-- download-modal.html: Apple 官網寬版雙層彈出視窗風格 (由 main.js 動態載入至 #modal-placeholder) -->
+<div
+  id="download-sponsorship-modal"
+  class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ease-out opacity-0 pointer-events-none select-none overflow-y-auto"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="download-modal-title"
+>
+  <div
+    id="download-modal-card"
+    class="w-[90%] min-[1080px]:w-[50%] max-w-3xl rounded-3xl shadow-2xl overflow-hidden relative transition-all duration-300 ease-out transform scale-95 flex flex-col text-left select-text my-auto border border-black/5"
+  >
+    <!-- 右上角關閉按鈕 (淺灰底色 bg-gray-100，深灰色 X 圖示，帶有平滑漸變效果) -->
+    <button
+      type="button"
+      id="btn-close-download-modal"
+      class="absolute top-5 right-5 z-20 w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 transition-colors duration-300 ease-out cursor-pointer shadow-sm"
+      aria-label="關閉視窗"
+    >
+      <i class="fa-solid fa-xmark text-sm sm:text-base"></i>
+    </button>
+
+    <!-- 【區塊一：上方主內容（純白背景 bg-white）】 -->
+    <div class="bg-white p-8 sm:p-10 flex flex-col items-start text-left">
+      <!-- 標題：靠左，大字體加粗 -->
+      <h3 id="download-modal-title" class="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight text-left mb-4">
+        檔案下載成功！
+      </h3>
+
+      <!-- 內文：靠左對齊，字體顏色使用 text-gray-600，行距拉寬 -->
+      <div class="space-y-4 text-left text-gray-600 leading-relaxed text-sm sm:text-base w-full">
+        <p>
+          如果你覺得好用，想贊助我喝一杯飲料，<strong class="font-bold text-gray-900">你完全不用多花錢！</strong>
+        </p>
+        <p>
+          如果你剛好要去蝦皮買東西，透過下方按鈕前往蝦皮下單（買其他東西也可以！），蝦皮就會從賣家賺的錢裡，分幾塊錢獎金給我。你的結帳金額完全不會變多！
+        </p>
+      </div>
+
+      <!-- 按鈕群組：精簡質感膠囊按鈕，靠左對齊與上方文字切齊，平滑漸變 -->
+      <div class="flex flex-wrap items-center gap-2.5 sm:gap-3 mt-6">
+        <!-- 蝦皮橘色膠囊按鈕 (小巧精緻無浮起位移，純滑順變色) -->
+        <a
+          id="btn-shopee-affiliate"
+          href="https://s.shopee.tw/906ZGkcKwu"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center justify-center rounded-full px-5 sm:px-6 py-2 bg-[#EE4D2D] hover:bg-[#d63b1d] active:bg-[#c43217] text-white text-xs sm:text-sm font-medium tracking-wide transition-colors duration-300 ease-out cursor-pointer shadow-sm"
+        >
+          <i class="fa-solid fa-bag-shopping mr-1.5 text-xs sm:text-sm"></i>
+          <span>前往支持</span>
+        </a>
+
+        <!-- 次要按鈕：「我再想想看」，小巧膠囊型，平滑漸變關閉視窗 -->
+        <button
+          type="button"
+          id="btn-secondary-close-modal"
+          class="inline-flex items-center justify-center rounded-full px-5 sm:px-6 py-2 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-600 hover:text-gray-800 text-xs sm:text-sm font-medium transition-colors duration-300 ease-out cursor-pointer"
+        >
+          我再想想看
+        </button>
+      </div>
+    </div>
+
+    <!-- 【區塊二：下方許願池（上下 padding 約 25px）】 -->
+    <div class="bg-gray-50 border-t border-gray-200 py-[25px] px-8 sm:px-10">
+      <!-- 標題：💡 還有想要什麼好用的工具嗎？ (字體略小，稍微加粗) -->
+      <h4 class="text-base sm:text-lg font-bold text-gray-800 mb-2">
+        💡 還有想要什麼好用的工具嗎？
+      </h4>
+
+      <!-- 說明文字與超連結 -->
+      <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">
+        如果你有任何想實現的功能，或是工作上遇到的痛點，歡迎<a
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-blue-600 underline hover:text-blue-800 font-medium transition-colors duration-300 ease-out"
+        >點此前往投稿許願表單</a>告訴我！
+      </p>
+    </div>
+  </div>
+</div>

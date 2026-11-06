@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>使用條款 | Hoodt.Tool 線上工具箱</title>
+
+    <meta property="og:title" content="使用條款 | Hoodt.Tool 線上工具箱" />
+    <meta property="og:description" content="Hoodt.Tool 提供多款免安裝、開啟即用的實用線上小工具。從文書處理、格式轉換到日常生產力輔助，幫你省下寶貴時間，輕鬆搞定工作與生活中的各種麻煩事。" />
+
+    <!-- 1. Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              appleBlue: '#0071E3',
+              appleHover: '#0077ED',
+              appleBg: '#F5F5F7',
+            },
+            fontFamily: {
+              sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"SF Pro Icons"', '"Helvetica Neue"', '"Noto Sans TC"', '"PingFang TC"', '"Microsoft JhengHei"', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- 2. Google Fonts: Noto Sans TC -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- 3. FontAwesome CDN 圖示資源 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+      html, body {
+        overflow-x: clip;
+        min-height: 100vh;
+      }
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      button, a {
+        transition-property: color, background-color, border-color, opacity;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+      }
+
+      /* 自訂輕量細緻捲軸 (與 index.html 完全統一) */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #D1D5DB;
+        border-radius: 9999px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #9CA3AF;
+      }
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #D1D5DB transparent;
+      }
+    </style>
+  </head>
+
+  <body class="bg-white text-[#1D1D1F] antialiased selection:bg-[#0071E3] selection:text-white min-h-screen flex flex-col font-sans">
+    
+    <!-- 最上方共用導覽列容器 (固定常駐於網頁頂端 sticky top-0 z-40，由 main.js 自動載入 header.html) -->
+    <div id="header-placeholder" class="no-print sticky top-0 z-40"></div>
+
+    <!-- 中間主要內容區 (純白極簡頁面，完全比照 Apple Legal 文件風格，無外圍卡片) -->
+    <main class="flex-1 w-full">
+      <div class="w-[90%] min-[1080px]:w-[56%] max-w-[1120px] mx-auto px-2 sm:px-4">
+        <!-- 頁面大標題與時間 (Apple 官網風格置中大標) -->
+        <header class="text-center pt-10 pb-12 sm:pt-16 sm:pb-16">
+          <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-neutral-900 mb-4">
+            Hoodt.Tool 線上工具箱使用條款
+          </h1>
+          <p class="text-sm sm:text-base text-neutral-500 font-normal">
+            最後更新日期：2026年11月6日
+          </p>
+        </header>
+
+        <!-- 條款內文區塊 (無卡片包覆，純淨排版) -->
+        <article class="pb-20 text-neutral-800 text-[15px] sm:text-base leading-relaxed">
+        
+        <!-- 前言 -->
+        <p class="mb-10 text-neutral-800 leading-relaxed">
+          歡迎使用 Hoodt 線上工具箱（以下簡稱「本網站」或「本服務」）。本服務條款（以下簡稱「本條款」）旨在規範您存取與使用本網站所提供之各項線上工具。當您存取或開始使用本服務時，即表示您已充分閱讀、瞭解並同意接受本條款之所有內容。
+        </p>
+
+        <!-- 條款各章節 -->
+        <div class="space-y-10">
+          
+          <!-- 1. 服務說明與性質 -->
+          <section>
+            <h2 class="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight mb-4">
+              1. 服務說明與性質
+            </h2>
+            <ul class="list-disc pl-5 sm:pl-6 space-y-2.5 text-neutral-800">
+              <li>
+                <strong class="font-semibold text-neutral-900">服務範圍：</strong>
+                本網站提供多元化之線上工具集合。
+              </li>
+              <li>
+                <strong class="font-semibold text-neutral-900">服務變更：</strong>
+                為持續優化使用者體驗，我們保留隨時新增、修改、暫停或永久移除單一工具或整體服務的權利，且毋須事先通知使用者。
+              </li>
+              <li>
+                <strong class="font-semibold text-neutral-900">按現狀提供：</strong>
+                本網站所有工具皆以「現狀（As-is）」及「現有（As-available）」基礎提供。我們不保證所有工具於任何時間皆能無中斷、無錯誤或安全地運行。
+              </li>
+            </ul>
+          </section>
+
+          <!-- 2. 使用者行為與義務 -->
+          <section>
+            <h2 class="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight mb-4">
+              2. 使用者行為與義務
+            </h2>
+            <p class="mb-3 text-neutral-800">
+              您同意在使用本服務時，應遵守相關法律法規，並承諾絕不利用本網站從事以下行為：
+            </p>
+            <ul class="list-disc pl-5 sm:pl-6 space-y-2.5 text-neutral-800 mb-4">
+              <li>
+                <strong class="font-semibold text-neutral-900">惡意濫用：</strong>
+                使用自動化腳本、機器人（Bots）或未經授權的 API 頻繁發送請求，導致本網站伺服器負載過重或影響其他使用者權益。
+              </li>
+              <li>
+                <strong class="font-semibold text-neutral-900">非法用途：</strong>
+                利用本網站工具隱藏或散佈惡意軟體、釣魚網站、侵權內容或任何違反中華民國法律之資訊。
+              </li>
+              <li>
+                <strong class="font-semibold text-neutral-900">破壞安全性：</strong>
+                試圖繞過本網站之付費機制、存取限制、破解工具原始碼，或對系統進行逆向工程。
+              </li>
+            </ul>
+            <p class="text-neutral-800">
+              若我們發現您違反上述義務，本網站有權立即終止您對特定工具或全站的存取權限。
+            </p>
+          </section>
+
+          <!-- 3. 內容與智慧財產權 -->
+          <section>
+            <h2 class="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight mb-4">
+              3. 內容與智慧財產權
+            </h2>
+            <ul class="list-disc pl-5 sm:pl-6 space-y-2.5 text-neutral-800">
+              <li>
+                <strong class="font-semibold text-neutral-900">工具所有權：</strong>
+                本網站之所有設計、原始碼、視覺元素及品牌標識，其智慧財產權均歸 Hoodt 所有，未經授權不得任意重製或作為商業販售用途。
+              </li>
+              <li>
+                <strong class="font-semibold text-neutral-900">使用者產出內容：</strong>
+                您透過本網站工具所生成、轉換或處理的資料（如轉檔後的檔案、生成的條碼），其所有權與相關責任歸屬於您。您必須確保您上傳至本網站處理之素材，並未侵犯任何第三方的著作權。
+              </li>
+              <li>
+                <strong class="font-semibold text-neutral-900">資料留存：</strong>
+                本網站多數工具以純前端運作或僅作暫時性處理，<strong class="font-bold text-neutral-900">本網站不提供檔案長期儲存或備份服務</strong>。請您務必自行保存原始檔案與生成結果。
+              </li>
+            </ul>
+          </section>
+
+          <!-- 4. 免責聲明與責任限制 -->
+          <section>
+            <h2 class="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight mb-4">
+              4. 免責聲明與責任限制
+            </h2>
+            <ul class="list-disc pl-5 sm:pl-6 space-y-2.5 text-neutral-800">
+              <li>
+                <strong class="font-semibold text-neutral-900">資料遺失與損壞：</strong>
+                在使用本網站進行檔案處理或資料轉換的過程中，如因網路中斷、系統錯誤等不可抗力因素導致資料遺失或毀損，本網站概不負責。
+              </li>
+              <li>
+                <strong class="font-semibold text-neutral-900">營運與商業損害：</strong>
+                若您將本網站產生之結果（如連結、數據、圖表）應用於商業用途，因工具功能異常或停機而導致的任何直接或間接損失（包含但不限於利潤損失、業務中斷），本網站不承擔任何賠償責任。
+              </li>
+              <li>
+                <strong class="font-semibold text-neutral-900">第三方服務連結：</strong>
+                本網站工具可能整合或導向第三方服務，該等第三方網站之內容與隱私保護政策，不在本網站控管與負責範圍內。
+              </li>
+            </ul>
+          </section>
+
+          <!-- 5. 隱私權與資料處理 -->
+          <section>
+            <h2 class="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight mb-4">
+              5. 隱私權與資料處理
+            </h2>
+            <p class="text-neutral-800">
+              我們極度重視您的隱私。本網站多數工具皆設計為在您的瀏覽器本地端執行，或僅於伺服器進行暫存運算後即刻刪除。未經您的明確同意，我們不會主動收集、儲存或與第三方分享您上傳處理的個人檔案或機密數據。
+            </p>
+          </section>
+
+          <!-- 6. 條款修改與終止 -->
+          <section>
+            <h2 class="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight mb-4">
+              6. 條款修改與終止
+            </h2>
+            <ul class="list-disc pl-5 sm:pl-6 space-y-2.5 text-neutral-800">
+              <li>
+                <strong class="font-semibold text-neutral-900">條款修訂：</strong>
+                本網站保留隨時修改本條款之權利。重大變更將於網站首頁或工具介面中公告，條款修改後繼續使用本服務，即視為您同意接受更新後之規範。
+              </li>
+              <li>
+                <strong class="font-semibold text-neutral-900">服務終止：</strong>
+                我們保留隨時針對單一使用者、特定 IP 位置，或因應網站營運策略，終止提供免費或付費服務之權利。
+              </li>
+            </ul>
+          </section>
+
+          <!-- 7. 聯絡我們 -->
+          <section>
+            <h2 class="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight mb-4">
+              7. 聯絡我們
+            </h2>
+            <p class="text-neutral-800">
+              若您對本服務條款有任何疑問，或需要回報工具異常、商業合作，請透過電子郵件 <a href="mailto:rainchang931221@gmail.com" class="text-[#0071E3] hover:underline">rainchang931221@gmail.com</a> 與我們聯繫。
+            </p>
+          </section>
+
+        </div>
+      </article>
+      </div>
+
+    </main>
+
+    <!-- 最下方共用頁尾容器 (由 main.js 動態 fetch footer.html) -->
+    <div id="footer-placeholder"></div>
+
+    <!-- 全域腳本 (載入 header 與 footer) -->
+    <script src="main.js"></script>
+  </body>
+</html>

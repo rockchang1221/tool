@@ -1,0 +1,2146 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>勞務報酬單製作工具 | Hoodt. Tools 線上工具箱</title>
+    
+    <meta property="og:title" content="勞務報酬單製作工具 | Hoodt.Tool 線上工具箱" />
+    <meta property="og:description" content="Hoodt.Tool 提供多款免安裝、開啟即用的實用線上小工具。從文書處理、格式轉換到日常生產力輔助，幫你省下寶貴時間，輕鬆搞定工作與生活中的各種麻煩事。" />
+    <meta property="og:image" content="Hoodt.Tool_self-labor_OG-image.png">
+    
+    <!-- 1. Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              appleBlue: '#0071E3',
+              appleHover: '#0077ED',
+              appleBg: '#F5F5F7',
+            },
+            fontFamily: {
+              sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"SF Pro Icons"', '"Helvetica Neue"', '"Noto Sans TC"', '"PingFang TC"', '"Microsoft JhengHei"', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- 2. Google Fonts: Noto Sans TC (保證中英數同一字型基準線，消除 html2canvas 導出時數字垂直位移) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- 3. FontAwesome CDN 圖示資源 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- 4. html2canvas & jsPDF CDN (供本機原生匯出 PDF 與圖片) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+      /* 防止手機版橫向溢出滾動，使用 clip 不破壞 position: sticky 吸頂行為 */
+      html {
+        overflow-x: clip;
+      }
+      body {
+        overflow-x: clip;
+        min-height: 100vh;
+      }
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      /* 全域柔和淡入淡出過渡 (無彈跳 zoom-in-95) */
+      button, input, select, textarea, label {
+        transition-property: color, background-color, border-color, opacity, box-shadow;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 180ms;
+      }
+
+      /* A4 紙張列印專用樣式 */
+      @media print {
+        @page {
+          size: A4 portrait;
+          margin: 8mm 10mm;
+        }
+        body {
+          background-color: #ffffff !important;
+          color: #000000 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        .no-print, nav, header, footer, button, #header-placeholder, #footer-placeholder, .editor-column {
+          display: none !important;
+        }
+        #print-area {
+          display: block !important;
+          width: 100% !important;
+          height: auto !important;
+          transform: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        #remuneration-sheet-paper {
+          box-shadow: none !important;
+          border: none !important;
+          padding: 0 !important;
+          margin: 0 auto !important;
+          width: 100% !important;
+          height: auto !important;
+          min-height: auto !important;
+          max-height: none !important;
+          aspect-ratio: auto !important;
+          transform: none !important;
+        }
+        .receipt-table-wrapper {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+      }
+
+      /* 確保 A4 單據中英文與數字字體統一，防止匯出時文字或數字垂直位移 */
+      #remuneration-sheet-paper,
+      #remuneration-sheet-paper * {
+        font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Microsoft JhengHei', sans-serif !important;
+      }
+
+      /* 表格欄位嚴格垂直居中對齊 */
+      #remuneration-sheet-paper table {
+        border-collapse: collapse;
+      }
+      #remuneration-sheet-paper th,
+      #remuneration-sheet-paper td {
+        vertical-align: middle !important;
+      }
+
+      /* 表格分區大標題 (領款人基本資料、勞務內容、款項資訊) 精準居中，消除 html2canvas 表頭垂直位移 */
+      .section-th-header {
+        height: 32px !important;
+        padding: 0 !important;
+        vertical-align: middle !important;
+        background-color: #F5F5F7 !important;
+      }
+      .section-th-header > div {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 100% !important;
+        width: 100% !important;
+        line-height: 1 !important;
+      }
+
+      /* 陰影與自訂滾動條 */
+      .preview-shadow {
+        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.12), 0 0 1px 1px rgba(0, 0, 0, 0.05);
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #D1D5DB;
+        border-radius: 9999px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #9CA3AF;
+      }
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #D1D5DB transparent;
+      }
+    </style>
+  </head>
+
+  <body class="bg-[#FAFAFC] text-[#1D1D1F] antialiased selection:bg-[#0071E3] selection:text-white min-h-screen flex flex-col font-sans">
+    
+    <!-- 最上方共用導覽列容器 (固定常駐於網頁頂端 sticky top-0 z-40) -->
+    <div id="header-placeholder" class="no-print sticky top-0 z-40"></div>
+
+    <!-- 中間主要內容區 (保持 overflow: visible，確保右側 A4 即時預覽 sticky 吸頂機制精準生效) -->
+    <main class="flex-1 max-w-[1520px] w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      
+      <!-- 網頁最上方大標題 (Apple 極簡官網風格) -->
+      <div class="mb-6 sm:mb-8">
+        <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">
+          勞務報酬單 製作工具
+        </h1>
+      </div>
+
+      <!-- 響應式雙欄佈局：大螢幕左右雙欄 (編輯區在左、A4預覽在右)，小螢幕或平板時自動切換為上下佈局 (編輯在上、預覽在下) -->
+      <div class="flex flex-col xl:grid xl:grid-cols-12 gap-8 items-start w-full min-w-0 max-w-full">
+        
+        <!-- 左側編輯區 (order-1) -->
+        <div class="w-full xl:col-span-5 order-1 space-y-5 editor-column min-w-0 max-w-full">
+          
+          <!-- 區塊 1: 公司名稱與基本資料 -->
+          <section class="bg-white rounded-2xl p-5 sm:p-6 border border-neutral-200/80 shadow-[0_1px_4px_rgba(0,0,0,0.02)]">
+            <div class="flex items-center gap-2 mb-4">
+              <i class="fa-regular fa-user text-neutral-800 text-sm"></i>
+              <h2 class="text-base font-semibold text-neutral-900">1. 基本資料</h2>
+            </div>
+
+            <!-- 公司名稱與填表日期 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <div>
+                <label class="block text-xs font-medium text-neutral-700 mb-1">
+                  公司抬頭
+                </label>
+                <div class="relative">
+                  <i class="fa-regular fa-building text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
+                  <input
+                    type="text"
+                    id="input-company-name"
+                    value="Hoodt. 線上雜貨店"
+                    placeholder="例如：Hoodt. 線上雜貨店"
+                    class="w-full pl-9 pr-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-sm outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-neutral-700 mb-1">
+                  填表日期
+                </label>
+                <input
+                  type="date"
+                  id="input-fill-date"
+                  class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-sm outline-none bg-white font-mono"
+                />
+              </div>
+            </div>
+
+            <!-- 國籍身分選擇 -->
+            <div class="mb-4">
+              <label class="block text-xs font-medium text-neutral-600 mb-1.5">國籍身分</label>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" id="nationality-group">
+                <button
+                  type="button"
+                  data-value="domestic"
+                  class="nat-btn py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer border-[#0071E3] bg-[#0071E3]/[0.04] text-[#0071E3]"
+                >
+                  <span>本國籍</span>
+                  <i class="fa-solid fa-circle-check text-[#0071E3] text-xs"></i>
+                </button>
+                <button
+                  type="button"
+                  data-value="foreign_over_183"
+                  class="nat-btn py-2 px-3 rounded-xl border text-xs font-medium flex items-center justify-between transition-all cursor-pointer border-neutral-200 text-neutral-700 hover:border-neutral-300"
+                >
+                  <span>外籍 (滿 183 天)</span>
+                  <i class="fa-solid fa-circle-check text-[#0071E3] text-xs hidden"></i>
+                </button>
+                <button
+                  type="button"
+                  data-value="foreign_under_183"
+                  class="nat-btn py-2 px-3 rounded-xl border text-xs font-medium flex items-center justify-between transition-all cursor-pointer border-neutral-200 text-neutral-700 hover:border-neutral-300"
+                >
+                  <span>外籍 (未滿 183 天)</span>
+                  <i class="fa-solid fa-circle-check text-[#0071E3] text-xs hidden"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- 姓名與身分證字號/證件編號 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <div>
+                <label class="block text-xs font-medium text-neutral-600 mb-1">姓名</label>
+                <input
+                  type="text"
+                  id="input-recipient-name"
+                  value="張小明"
+                  placeholder="例如：張小明"
+                  class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-sm outline-none"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-neutral-600 mb-1">
+                  身份證字號 / 證件編號
+                </label>
+                <input
+                  type="text"
+                  id="input-id-number"
+                  value="A123456789"
+                  placeholder="本國身分證或居留證/護照號"
+                  class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-sm font-mono tracking-wider outline-none"
+                />
+              </div>
+            </div>
+
+            <!-- 聯絡電話 -->
+            <div class="mb-3">
+              <label class="block text-xs font-medium text-neutral-600 mb-1">聯絡電話</label>
+              <input
+                type="text"
+                id="input-phone"
+                value="0912-345678"
+                placeholder="例如：0912-345678"
+                class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-sm font-mono outline-none"
+              />
+            </div>
+
+            <!-- 戶籍地址 & 通訊地址 (依要求：戶籍地址有預設值，通訊地址預設為空) -->
+            <div class="space-y-3">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-xs font-medium text-neutral-600">戶籍地址</label>
+                  <button
+                    type="button"
+                    id="btn-copy-address"
+                    class="text-[11px] text-[#0071E3] hover:underline cursor-pointer"
+                  >
+                    帶入至通訊地址
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  id="input-household-address"
+                  value="台北市信義區信義路五段7號"
+                  placeholder="台北市信義區信義路五段7號"
+                  class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-sm outline-none"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-neutral-600 mb-1">通訊地址</label>
+                <input
+                  type="text"
+                  id="input-contact-address"
+                  value=""
+                  placeholder="請填寫通訊地址（如與戶籍相同可點上方帶入）"
+                  class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-sm outline-none"
+                />
+              </div>
+            </div>
+          </section>
+
+          <!-- 區塊 2: 勞務內容 -->
+          <section class="bg-white rounded-2xl p-5 sm:p-6 border border-neutral-200/80 shadow-[0_1px_4px_rgba(0,0,0,0.02)]">
+            <div class="flex items-center gap-2 mb-4">
+              <i class="fa-solid fa-briefcase text-neutral-800 text-sm"></i>
+              <h2 class="text-base font-semibold text-neutral-900">2. 勞務內容</h2>
+            </div>
+
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-medium text-neutral-600 mb-1">專案名稱</label>
+                <input
+                  type="text"
+                  id="input-project-name"
+                  value="Hoodt.store電子勞報單製作工具開發專案"
+                  placeholder="Hoodt.store電子勞報單製作工具開發專案"
+                  class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-sm outline-none"
+                />
+              </div>
+
+              <!-- 專案期間 (起 / 止)：依要求改回原本簡約圓角輸入框樣式；當螢幕寬度小於 768px (md) 時自動變為上下兩行，>= 768px 時並排左右雙欄 -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-neutral-600 mb-1">專案期間 (起)</label>
+                  <input
+                    type="date"
+                    id="input-project-start"
+                    value="2025-05-20"
+                    class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-sm outline-none font-mono bg-white"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-neutral-600 mb-1">專案期間 (止)</label>
+                  <input
+                    type="date"
+                    id="input-project-end"
+                    value="2026-02-17"
+                    class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-sm outline-none font-mono bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="text-xs font-medium text-neutral-600">勞務類別</label>
+                  <button
+                    type="button"
+                    id="btn-labor-category-clear"
+                    class="text-[11px] text-neutral-400 hover:text-neutral-600 cursor-pointer hidden"
+                  >
+                    清除勾選
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2" id="labor-category-group">
+                  <button
+                    type="button"
+                    data-value="article"
+                    class="labor-cat-btn py-2 px-3 rounded-xl border text-xs font-medium transition-all cursor-pointer border-neutral-200 text-neutral-700 hover:border-neutral-300"
+                  >
+                    稿費
+                  </button>
+                  <button
+                    type="button"
+                    data-value="production"
+                    class="labor-cat-btn py-2 px-3 rounded-xl border text-xs font-medium transition-all cursor-pointer border-neutral-200 text-neutral-700 hover:border-neutral-300"
+                  >
+                    製作費
+                  </button>
+                  <button
+                    type="button"
+                    data-value="other"
+                    class="labor-cat-btn py-2 px-3 rounded-xl border text-xs font-medium transition-all cursor-pointer border-neutral-200 text-neutral-700 hover:border-neutral-300"
+                  >
+                    其他
+                  </button>
+                </div>
+
+                <div id="drawer-labor-category-other" class="overflow-hidden transition-all duration-300 ease-out max-h-0 opacity-0 mt-0 pointer-events-none">
+                  <input
+                    type="text"
+                    id="input-labor-category-other-text"
+                    placeholder="請填寫其他類別名稱 (如：剪輯、顧問)"
+                    class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-xs outline-none transition-colors"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 區塊 3: 款項資訊 -->
+          <section class="bg-white rounded-2xl p-5 sm:p-6 border border-neutral-200/80 shadow-[0_1px_4px_rgba(0,0,0,0.02)]">
+            <div class="flex items-center gap-2 mb-4">
+              <i class="fa-solid fa-calculator text-neutral-800 text-sm"></i>
+              <h2 class="text-base font-semibold text-neutral-900">3. 款項資訊</h2>
+            </div>
+
+            <div class="mb-4">
+              <label class="block text-xs font-medium text-neutral-600 mb-1">
+                支領金額 (含稅總額 TWD$)
+              </label>
+              <div class="relative">
+                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 font-semibold text-xs">
+                  TWD$
+                </span>
+                <input
+                  type="number"
+                  id="input-total-amount"
+                  min="0"
+                  step="1"
+                  value="8888"
+                  placeholder="8888"
+                  class="w-full pl-14 pr-4 py-2.5 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-lg font-bold text-neutral-900 font-mono outline-none"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <div>
+                <label class="block text-xs font-medium text-neutral-600 mb-1">稅目代號</label>
+                <select
+                  id="select-income-code"
+                  class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-xs outline-none bg-white"
+                >
+                  <option value="9A">9A 執行業務 (10%，起扣 20,000)</option>
+                  <option value="9B">9B 稿費演講 (10%，起扣 20,000)</option>
+                  <option value="50">50 薪資所得 (5%，起扣 40,001)</option>
+                  <option value="51">51 租賃中獎 (10%)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-neutral-600 mb-1">二代健保 (2.11%)</label>
+                <select
+                  id="select-health-insurance"
+                  class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-xs outline-none bg-white"
+                >
+                  <option value="auto">達 TWD$ 20,000 自動扣 2.11%</option>
+                  <option value="exempt">工會投保證明 / 學生 (免扣)</option>
+                  <option value="none">不扣除二代健保</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 簡約試算小結 (螢幕小於 768px 時條列「置左項目標題，置右金額」對齊 A4 單據樣式；>= 768px 時維持橫向排列) -->
+            <div class="bg-[#F5F5F7] rounded-xl p-3 text-xs">
+              <!-- 手機版 (< 768px, md:hidden)：仿 A4 表格項目置左、金額置右條列排列 -->
+              <div class="flex flex-col space-y-2 md:hidden">
+                <div class="flex justify-between items-center text-neutral-600">
+                  <span>代扣所得稅 (<span id="mobile-summary-tax-rate">10</span>%)：</span>
+                  <strong id="mobile-summary-tax-amount" class="text-neutral-800 font-mono">TWD$ 0</strong>
+                </div>
+                <div class="flex justify-between items-center text-neutral-600">
+                  <span>二代健保補充保費 (2.11%)：</span>
+                  <strong id="mobile-summary-health-amount" class="text-neutral-800 font-mono">TWD$ 0</strong>
+                </div>
+                <div class="border-t border-dashed border-neutral-300 pt-2 flex justify-between items-center font-bold">
+                  <span class="text-neutral-700">支領淨額 (實領)：</span>
+                  <strong id="mobile-summary-net-amount" class="text-[#0071E3] font-mono text-sm">TWD$ 8,888</strong>
+                </div>
+              </div>
+
+              <!-- 桌面/平板版 (>= 768px, hidden md:flex)：維持簡約橫向排列 -->
+              <div class="hidden md:flex items-center justify-between">
+                <div class="flex items-center gap-4 text-neutral-600">
+                  <span>代扣稅：<strong id="summary-tax-amount" class="text-neutral-800 font-mono">TWD$ 0</strong></span>
+                  <span>二代健保：<strong id="summary-health-amount" class="text-neutral-800 font-mono">TWD$ 0</strong></span>
+                </div>
+                <div>
+                  <span class="text-neutral-500 mr-1.5">實領：</span>
+                  <strong id="summary-net-amount" class="text-[#0071E3] font-bold font-mono text-sm">
+                    TWD$ 8,888
+                  </strong>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 區塊 4: 付款資訊 -->
+          <section class="bg-white rounded-2xl p-5 sm:p-6 border border-neutral-200/80 shadow-[0_1px_4px_rgba(0,0,0,0.02)]">
+            <div class="flex items-center gap-2 mb-4">
+              <i class="fa-regular fa-credit-card text-neutral-800 text-sm"></i>
+              <h2 class="text-base font-semibold text-neutral-900">4. 付款資訊</h2>
+            </div>
+
+            <div class="mb-3">
+              <label class="block text-xs font-medium text-neutral-600 mb-1.5">付款方式</label>
+              <div class="grid grid-cols-3 gap-2" id="payment-method-group">
+                <button
+                  type="button"
+                  data-value="remittance"
+                  class="pay-method-btn py-2 px-3 rounded-xl border text-xs font-medium transition-all duration-150 cursor-pointer border-[#0071E3] bg-[#0071E3]/[0.04] text-[#0071E3] font-semibold"
+                >
+                  匯款
+                </button>
+                <button
+                  type="button"
+                  data-value="cash"
+                  class="pay-method-btn py-2 px-3 rounded-xl border text-xs font-medium transition-all duration-150 cursor-pointer border-neutral-200 text-neutral-700 hover:border-neutral-300"
+                >
+                  現金
+                </button>
+                <button
+                  type="button"
+                  data-value="other"
+                  class="pay-method-btn py-2 px-3 rounded-xl border text-xs font-medium transition-all duration-150 cursor-pointer border-neutral-200 text-neutral-700 hover:border-neutral-300"
+                >
+                  其他
+                </button>
+              </div>
+
+              <div id="drawer-payment-method-other" class="overflow-hidden transition-all duration-300 ease-out max-h-0 opacity-0 mt-0 pointer-events-none">
+                <input
+                  type="text"
+                  id="input-payment-method-other-text"
+                  placeholder="請輸入其他付款方式 (如：支票、禮券)"
+                  class="w-full px-3 py-1.5 rounded-xl border border-neutral-300 text-xs outline-none bg-white transition-colors"
+                />
+              </div>
+            </div>
+
+            <!-- 帳戶資料區：切換現金或其他時漸變反灰，無跳動、純平滑過渡 -->
+            <div class="pt-1">
+              <div id="bank-info-container" class="transition-all duration-300 ease-out rounded-xl opacity-100">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label class="block text-xs font-medium text-neutral-600 mb-1">戶名</label>
+                    <input
+                      type="text"
+                      id="input-bank-account-name"
+                      value="張小明"
+                      placeholder="張小明"
+                      class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-sm outline-none transition-all duration-300 disabled:bg-neutral-100/70 disabled:text-neutral-500 disabled:border-neutral-200"
+                    />
+                  </div>
+
+                  <div class="relative">
+                    <div class="flex items-center justify-between mb-1">
+                      <label class="text-xs font-medium text-neutral-600">金融機構</label>
+                      <button
+                        type="button"
+                        id="btn-toggle-bank-dropdown"
+                        class="text-[11px] text-[#0071E3] hover:underline cursor-pointer transition-opacity duration-300"
+                      >
+                        常用銀行代碼
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      id="input-bank-name"
+                      value="013 國泰世華銀行"
+                      placeholder="013 國泰世華銀行"
+                      class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-sm outline-none transition-all duration-300 disabled:bg-neutral-100/70 disabled:text-neutral-500 disabled:border-neutral-200"
+                    />
+
+                    <!-- 常用銀行代碼下拉選單 -->
+                    <div
+                      id="bank-dropdown"
+                      class="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-xl z-30 p-2 max-h-48 overflow-y-auto transition-all duration-200 ease-out opacity-0 -translate-y-1 pointer-events-none"
+                    >
+                      <input
+                        type="text"
+                        id="input-search-bank"
+                        placeholder="搜尋銀行 (如: 013, 822)..."
+                        class="w-full p-1.5 mb-1 text-xs border border-neutral-200 rounded-lg outline-none"
+                      />
+                      <div class="space-y-0.5" id="bank-list-options"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-medium text-neutral-600 mb-1">銀行帳號</label>
+                  <input
+                    type="text"
+                    id="input-bank-account"
+                    value="1234-5678-1221"
+                    placeholder="1234-5678-1221"
+                    class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:border-[#0071E3] text-sm font-mono tracking-wider outline-none transition-all duration-300 disabled:bg-neutral-100/70 disabled:text-neutral-500 disabled:border-neutral-200"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 區塊 5: 簽署與證件影本 -->
+          <section class="bg-white rounded-2xl p-5 sm:p-6 border border-neutral-200/80 shadow-[0_1px_4px_rgba(0,0,0,0.02)]">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-pen-nib text-neutral-800 text-sm"></i>
+                <h2 class="text-base font-semibold text-neutral-900">5. 簽署與證件</h2>
+                
+                <!-- 盾牌懸浮提示 Tooltip (純平滑淡入浮現，防手機出界) -->
+                <div class="relative group inline-flex items-center">
+                  <button
+                    type="button"
+                    class="text-neutral-400 hover:text-[#0071E3] transition-colors p-1 rounded-full hover:bg-neutral-100 cursor-help"
+                    aria-label="隱私與安全保護說明"
+                  >
+                    <i class="fa-solid fa-shield-halved text-sm"></i>
+                  </button>
+                  <div class="absolute left-1/2 -translate-x-[45%] sm:left-0 sm:translate-x-0 bottom-full mb-2 w-72 max-w-[calc(100vw-3rem)] p-3 bg-neutral-900/95 backdrop-blur-md text-white text-[11px] leading-relaxed rounded-xl shadow-2xl pointer-events-none z-30 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-out">
+                    <span class="font-semibold text-white block mb-0.5">🔒 隱私與安全保護</span>
+                    本工具為純瀏覽器本地端離線運作機制，證件影本與個人資料僅存於您的本機裝置，絕不會上傳至任何伺服器，請安心使用。
+                    <div class="absolute top-full left-[45%] sm:left-3 -mt-1 border-4 border-transparent border-t-neutral-900/95"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 簽署方式 -->
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-neutral-100">
+              <span class="text-xs font-medium text-neutral-700">簽署模式</span>
+              <div class="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  id="btn-sig-mode-paper"
+                  class="px-3 py-1 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer bg-neutral-900 text-white"
+                >
+                  紙本親簽 (留白)
+                </button>
+                <button
+                  type="button"
+                  id="btn-sig-mode-digital"
+                  class="px-3 py-1 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer bg-neutral-100 text-neutral-600 hover:text-neutral-900"
+                >
+                  電子簽名
+                </button>
+              </div>
+            </div>
+
+            <!-- 電子簽名設定抽屜 -->
+            <div id="drawer-digital-sig" class="overflow-hidden transition-all duration-300 ease-out max-h-0 opacity-0 mb-0 pointer-events-none">
+              
+              <!-- 尚未建立簽名：雙卡片二選一 -->
+              <div id="sig-choice-cards" class="space-y-1.5 pt-1">
+                <div class="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    id="btn-open-sig-modal"
+                    class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-neutral-300 hover:border-[#0071E3] hover:bg-[#0071E3]/[0.04] text-neutral-800 hover:text-[#0071E3] text-xs font-medium transition-all duration-200 shadow-2xs group cursor-pointer"
+                  >
+                    <i class="fa-solid fa-pen-nib text-neutral-500 group-hover:text-[#0071E3]"></i>
+                    <span>手寫板親簽</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    id="btn-trigger-upload-sig"
+                    class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-neutral-300 hover:border-[#0071E3] hover:bg-[#0071E3]/[0.04] text-neutral-800 hover:text-[#0071E3] text-xs font-medium transition-all duration-200 shadow-2xs group cursor-pointer"
+                  >
+                    <i class="fa-solid fa-arrow-up-from-bracket text-neutral-500 group-hover:text-[#0071E3]"></i>
+                    <span>上傳簽名圖檔</span>
+                  </button>
+                </div>
+                <input type="file" id="input-file-sig" accept="image/*" class="hidden" />
+                <p class="text-[11px] text-neutral-400 text-center">
+                  可於手寫板簽名，或上傳透明背景 PNG / 印鑑圖檔
+                </p>
+              </div>
+
+              <!-- 已建立簽名：整合式預覽卡片 -->
+              <div id="sig-preview-card" class="hidden border border-neutral-200/90 rounded-xl p-3 bg-neutral-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                <div class="flex items-center gap-3">
+                  <div class="h-12 w-28 bg-white border border-neutral-200 rounded-lg flex items-center justify-center p-1 overflow-hidden shrink-0 shadow-2xs">
+                    <img id="img-sig-preview" src="" alt="簽名" class="max-h-10 max-w-full object-contain" />
+                  </div>
+                  <div>
+                    <div class="text-xs font-medium text-neutral-800">已建立電子簽名</div>
+                    <div class="text-[11px] text-neutral-400">已自動帶入 A4 單據領款人欄</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                  <button
+                    type="button"
+                    id="btn-re-sig"
+                    class="px-2.5 py-1 text-xs font-medium text-neutral-700 hover:text-neutral-900 bg-white hover:bg-neutral-100 border border-neutral-300 rounded-lg shadow-2xs cursor-pointer"
+                  >
+                    重新手寫
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-re-upload-sig"
+                    class="px-2.5 py-1 text-xs font-medium text-neutral-700 hover:text-neutral-900 bg-white hover:bg-neutral-100 border border-neutral-300 rounded-lg shadow-2xs cursor-pointer"
+                  >
+                    更換圖檔
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-clear-sig"
+                    class="p-1 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer"
+                    title="清除簽名"
+                  >
+                    <i class="fa-regular fa-trash-can"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 身分證影本照片上傳 (正面/反面) -->
+            <div class="grid grid-cols-2 gap-3 pt-3 border-t border-neutral-100">
+              <!-- 正面 -->
+              <div class="border border-dashed border-neutral-300 rounded-xl p-3 text-center flex flex-col items-center justify-center min-h-[120px] relative bg-neutral-50/60 hover:bg-neutral-50 transition-colors">
+                <input type="file" id="input-id-front" accept="image/*" class="hidden" />
+                
+                <div id="front-placeholder-view" class="cursor-pointer flex flex-col items-center w-full py-2">
+                  <i class="fa-solid fa-arrow-up-from-bracket text-neutral-400 text-lg mb-1"></i>
+                  <span class="text-xs font-medium text-neutral-700">上傳證件正面</span>
+                  <span class="text-[10px] text-neutral-400 mt-0.5">點擊選取或拍照</span>
+                </div>
+
+                <div id="front-preview-view" class="hidden relative w-full flex flex-col items-center">
+                  <img id="img-id-front" src="" alt="正面" class="max-h-16 object-contain rounded" />
+                  <button
+                    type="button"
+                    id="btn-remove-front"
+                    class="absolute -top-1 -right-1 p-1 bg-neutral-700 text-white rounded-full hover:bg-red-600 cursor-pointer shadow text-[10px] w-5 h-5 flex items-center justify-center"
+                    title="移除正面"
+                  >
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 反面 -->
+              <div class="border border-dashed border-neutral-300 rounded-xl p-3 text-center flex flex-col items-center justify-center min-h-[120px] relative bg-neutral-50/60 hover:bg-neutral-50 transition-colors">
+                <input type="file" id="input-id-back" accept="image/*" class="hidden" />
+                
+                <div id="back-placeholder-view" class="cursor-pointer flex flex-col items-center w-full py-2">
+                  <i class="fa-solid fa-arrow-up-from-bracket text-neutral-400 text-lg mb-1"></i>
+                  <span class="text-xs font-medium text-neutral-700">上傳證件反面</span>
+                  <span class="text-[10px] text-neutral-400 mt-0.5">點擊選取或拍照</span>
+                </div>
+
+                <div id="back-preview-view" class="hidden relative w-full flex flex-col items-center">
+                  <img id="img-id-back" src="" alt="反面" class="max-h-16 object-contain rounded" />
+                  <button
+                    type="button"
+                    id="btn-remove-back"
+                    class="absolute -top-1 -right-1 p-1 bg-neutral-700 text-white rounded-full hover:bg-red-600 cursor-pointer shadow text-[10px] w-5 h-5 flex items-center justify-center"
+                    title="移除反面"
+                  >
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- 右側 A4 即時預覽區 (滾動時平滑吸頂於導覽列正下方，無空白空隙) -->
+        <div id="preview-column" class="w-full xl:col-span-7 order-2 xl:sticky xl:top-[86px] self-start">
+          <div class="space-y-3">
+            
+            <!-- 即時預覽標題列與操作按鈕 (螢幕小於 768px 時隱藏文字標題，僅保留輸出按鈕並置右，避免上下折行跑版) -->
+            <div class="flex items-center justify-between gap-2.5 px-1 min-w-0">
+              <div class="hidden md:flex items-center gap-2 shrink-0">
+                <i class="fa-regular fa-eye text-neutral-500 text-sm"></i>
+                <span class="text-xs font-semibold text-neutral-800">
+                  A4 勞務報酬單即時預覽
+                </span>
+              </div>
+
+              <div class="flex items-center justify-end w-full md:w-auto gap-2 shrink-0">
+                <!-- 另存成圖片 (灰底按鍵) -->
+                <button
+                  type="button"
+                  id="btn-download-image"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:text-neutral-900 bg-white hover:bg-neutral-100 border border-neutral-300/80 rounded-full transition-all duration-150 active:opacity-80 whitespace-nowrap cursor-pointer shadow-xs"
+                >
+                  <i class="fa-regular fa-image text-neutral-600"></i>
+                  <span id="txt-download-image">另存成圖片</span>
+                </button>
+
+                <!-- 下載 PDF (藍底按鍵) -->
+                <button
+                  type="button"
+                  id="btn-download-pdf"
+                  class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-full shadow-xs transition-all duration-150 active:opacity-85 whitespace-nowrap cursor-pointer"
+                >
+                  <i class="fa-solid fa-arrow-down text-xs"></i>
+                  <span id="txt-download-pdf">下載 PDF</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 預覽畫布外層容器：等比縮放 A4 (210 x 297) -->
+            <div
+              id="preview-viewport-container"
+              class="bg-[#EBEBEF] rounded-2xl sm:rounded-3xl p-3 sm:p-6 flex justify-center items-start overflow-hidden border border-neutral-200/60 shadow-inner min-h-[360px] sm:min-h-[520px] max-w-full"
+            >
+              <div id="print-area" class="mx-auto max-w-full overflow-hidden" style="position: relative;">
+                
+                <!-- 核心 A4 紙張 (標準 210mm x 297mm，基準 794px × 1123px，完全對齊原版 RemunerationSheet.tsx) -->
+                <div
+                  id="remuneration-sheet-paper"
+                  class="receipt-table-wrapper w-[794px] h-[1123px] min-h-[1123px] max-h-[1123px] bg-white text-black p-8 font-sans selection:bg-neutral-200 flex flex-col justify-between box-border overflow-hidden preview-shadow shrink-0"
+                  style="aspect-ratio: 210 / 297; transform-origin: top left;"
+                >
+                  <div>
+                    <!-- 頂部標題（正常字距、冠上公司名稱）與填表日期 -->
+                    <div class="flex justify-between items-end mb-3">
+                      <div>
+                        <h1 id="a4-header-title" class="text-2xl font-bold tracking-normal text-black leading-tight">
+                          Hoodt. 線上雜貨店 勞務報酬單
+                        </h1>
+                      </div>
+
+                      <!-- 填表日期文字微縮 (移除 tracking-tight 避免拆字造成西元數字垂直位移) -->
+                      <div class="text-[12px] text-neutral-600 font-normal whitespace-nowrap pb-0.5" id="a4-fill-date-label">
+                        填表日期：西元 2026 年 11 月 04 日
+                      </div>
+                    </div>
+
+                    <!-- 主表格 (文字大一號約 11pt = 13.5px，框線細緻精確對齊) -->
+                    <table class="w-full border-collapse border border-neutral-700 text-[13.5px] leading-normal table-fixed">
+                      <colgroup>
+                        <col style="width: 30%;" />
+                        <col style="width: 25%;" />
+                        <col style="width: 45%;" />
+                      </colgroup>
+
+                      <tbody>
+                        <!-- Section 1: 領款人基本資料 (灰色標題欄統一底色 #F5F5F7，字級提升至 14px，精確居中無位移) -->
+                        <tr>
+                          <th colspan="3" class="section-th-header border border-neutral-600 text-center font-bold text-[14px] text-neutral-900">
+                            <div>領款人基本資料</div>
+                          </th>
+                        </tr>
+
+                        <!-- Row 1: 姓名(標籤)、身份證字號/證件編號(標籤+值) -->
+                        <tr>
+                          <th class="bg-[#F5F5F7] border border-neutral-600 py-2 px-3 text-center font-medium text-neutral-800 text-[13.5px]">
+                            姓名
+                          </th>
+                          <th class="bg-[#F5F5F7] border border-neutral-600 py-2 px-3 text-center font-medium whitespace-nowrap text-neutral-800 text-[13.5px]">
+                            身份證字號/證件編號
+                          </th>
+                          <td id="a4-document-number" class="border border-neutral-600 py-2 px-3 text-left font-mono text-[14px] whitespace-nowrap font-medium text-neutral-900">
+                            A123456789
+                          </td>
+                        </tr>
+
+                        <!-- Row 2: 姓名(值)、聯絡電話(標籤+值) -->
+                        <tr>
+                          <td id="a4-recipient-name" class="border border-neutral-600 py-2 px-3 text-center font-medium text-[14px] whitespace-nowrap text-neutral-900">
+                            張小明
+                          </td>
+                          <th class="bg-[#F5F5F7] border border-neutral-600 py-2 px-3 text-center font-medium whitespace-nowrap text-neutral-800 text-[13.5px]">
+                            聯絡電話
+                          </th>
+                          <td id="a4-contact-phone" class="border border-neutral-600 py-2 px-3 text-left font-mono text-[14px] whitespace-nowrap font-medium text-neutral-900">
+                            0912-345678
+                          </td>
+                        </tr>
+
+                        <!-- Row 3 & 4: 國籍身分(跨兩列超寬不折行)、戶籍地址、通訊地址 -->
+                        <tr>
+                          <td rowspan="2" class="border border-neutral-600 p-2.5 align-middle text-[13px] leading-relaxed whitespace-nowrap" id="a4-nationality-cells">
+                            <!-- 國籍勾選 (本國籍, 外國籍滿183天, 外國籍未滿183天) -->
+                          </td>
+                          <th class="bg-[#F5F5F7] border border-neutral-600 py-2 px-3 text-center font-medium whitespace-nowrap text-neutral-800 text-[13.5px]">
+                            戶籍地址
+                          </th>
+                          <td id="a4-household-address" class="border border-neutral-600 py-2 px-3 text-left text-[13.5px] text-neutral-900">
+                            台北市信義區信義路五段7號
+                          </td>
+                        </tr>
+                        <tr>
+                          <th class="bg-[#F5F5F7] border border-neutral-600 py-2 px-3 text-center font-medium whitespace-nowrap text-neutral-800 text-[13.5px]">
+                            通訊地址
+                          </th>
+                          <td id="a4-contact-address" class="border border-neutral-600 py-2 px-3 text-left text-[13.5px] text-neutral-900">
+                          </td>
+                        </tr>
+
+                        <!-- Section 2: 勞務內容 -->
+                        <tr>
+                          <th colspan="3" class="section-th-header border border-neutral-600 text-center font-bold text-[14px] text-neutral-900">
+                            <div>勞務內容</div>
+                          </th>
+                        </tr>
+                        <tr>
+                          <th class="bg-[#F5F5F7] border border-neutral-600 py-2 px-3 text-center font-medium whitespace-nowrap text-neutral-800 text-[13.5px]">
+                            專案名稱
+                          </th>
+                          <td colspan="2" id="a4-project-name" class="border border-neutral-600 py-2 px-3 text-left font-medium text-[13.5px] text-neutral-900">
+                            Hoodt.store電子勞報單製作工具開發專案
+                          </td>
+                        </tr>
+                        <tr>
+                          <th class="bg-[#F5F5F7] border border-neutral-600 py-2 px-3 text-center font-medium whitespace-nowrap text-neutral-800 text-[13.5px]">
+                            專案期間
+                          </th>
+                          <td colspan="2" id="a4-project-dates" class="border border-neutral-600 py-2 px-3 text-left text-[13.5px] text-neutral-900">
+                            自 西元 2025 年 05 月 20 日 至 西元 2026 年 02 月 17 日 止
+                          </td>
+                        </tr>
+                        <tr>
+                          <th class="bg-[#F5F5F7] border border-neutral-600 py-2 px-3 text-center font-medium whitespace-nowrap text-neutral-800 text-[13.5px]">
+                            勞務類別
+                          </th>
+                          <td colspan="2" class="border border-neutral-600 py-2 px-3 text-left text-[13.5px]">
+                            <div class="flex flex-wrap items-center gap-6" id="a4-labor-category-cells">
+                              <!-- 稿費 / 製作費 / 其他 -->
+                            </div>
+                          </td>
+                        </tr>
+
+                        <!-- Section 3: 款項資訊 (左右 4/6 開分割) -->
+                        <tr>
+                          <th colspan="3" class="section-th-header border border-neutral-600 text-center font-bold text-[14px] text-neutral-900">
+                            <div>款項資訊</div>
+                          </th>
+                        </tr>
+
+                        <tr>
+                          <td colspan="3" class="p-0 border border-neutral-600">
+                            <div class="flex w-full divide-x divide-neutral-600">
+                              
+                              <!-- 左側 50% 款項試算區 (依要求：5/5 對開) -->
+                              <div style="width: 50%;" class="p-3.5 space-y-2 shrink-0 text-[13.5px]">
+                                <div class="flex justify-between items-center whitespace-nowrap">
+                                  <span class="font-bold">支領金額：</span>
+                                  <span>TWD$ <span id="a4-total-amount" class="font-mono text-[15px] font-bold">8,888</span> 元</span>
+                                </div>
+                                <div class="flex justify-between items-center whitespace-nowrap">
+                                  <span>代扣所得稅 (<span id="a4-tax-rate">10</span>%)：</span>
+                                  <span>TWD$ <span id="a4-tax-amount" class="font-mono text-[14px]">0</span> 元</span>
+                                </div>
+                                <div class="flex justify-between items-center whitespace-nowrap">
+                                  <span>二代健保補充保費 (2.11%)：</span>
+                                  <span>TWD$ <span id="a4-health-amount" class="font-mono text-[14px]">0</span> 元</span>
+                                </div>
+                                <div class="flex justify-between items-center pt-2 border-t border-dashed border-neutral-400 font-bold whitespace-nowrap text-[14px]">
+                                  <span>支領淨額：</span>
+                                  <span>TWD$ <span id="a4-net-amount" class="font-mono text-[16px] font-bold text-neutral-900">8,888</span> 元</span>
+                                </div>
+                              </div>
+
+                              <!-- 右側 50% 付款方式與銀行帳戶區 (依要求：5/5 對開) -->
+                              <div style="width: 50%;" class="p-3.5 space-y-2 shrink-0 text-[13.5px]">
+                                <div class="flex items-center gap-3.5 whitespace-nowrap" id="a4-payment-method-cells">
+                                  <!-- 現金 / 匯款 / 其他 -->
+                                </div>
+
+                                <div class="flex items-center whitespace-nowrap">
+                                  <span class="w-12 shrink-0">戶名：</span>
+                                  <span id="a4-bank-account-name" class="font-medium">張小明</span>
+                                </div>
+
+                                <div class="flex items-center whitespace-nowrap">
+                                  <span class="w-12 shrink-0">銀行：</span>
+                                  <span id="a4-bank-name">013 國泰世華銀行</span>
+                                </div>
+
+                                <div class="flex items-center whitespace-nowrap">
+                                  <span class="w-12 shrink-0">帳號：</span>
+                                  <span id="a4-bank-account" class="font-mono font-semibold text-[14px]">1234-5678-1221</span>
+                                </div>
+                              </div>
+
+                            </div>
+                          </td>
+                        </tr>
+
+                        <!-- 備註法律說明條文 (附圖二底部小字) -->
+                        <tr>
+                          <td colspan="3" class="border border-neutral-600 p-2 text-[10.5px] text-neutral-600 leading-snug">
+                            本國總應扣繳稅額≦ 2,000 者不預先扣繳。固定薪資(50):查表(起扣點 84,501) 非固定薪資(50):5% (起扣點 40,001) 執行業務報酬(9A):10%(起扣點 20,000) 租賃所得(51):10% (起扣點 20,001)競技中獎獎金(91):10%(起扣點 20,001)
+                          </td>
+                        </tr>
+
+                      </tbody>
+                    </table>
+
+                    <!-- 簽收確認宣告條款 (依要求：直接列出完整大寫金額，如：新台幣壹拾貳萬捌仟捌佰捌拾捌元整，不使用填空與刪除線) -->
+                    <div class="mt-3.5 space-y-1.5 text-[13.5px] leading-relaxed">
+                      <div>
+                        茲收到
+                        <span id="a4-legal-comp-name" class="inline-block border-b border-black min-w-[170px] text-center font-medium px-2">
+                          Hoodt. 線上雜貨店
+                        </span>
+                        新台幣
+                        <span id="a4-chinese-slots-area" class="font-bold underline decoration-1 underline-offset-4 px-2 inline-block">
+                          捌仟捌佰捌拾捌元整
+                        </span>
+                      </div>
+
+                      <div>
+                        本人保證提供之勞務服務並無違反法令或侵害他人權益，並同意
+                        <span id="a4-legal-comp-name-2" class="inline-block border-b border-black min-w-[190px] text-center font-medium px-2">
+                          Hoodt. 線上雜貨店
+                        </span>
+                        使用本單作為扣繳憑證。
+                      </div>
+
+                      <!-- 領款人簽章列 -->
+                      <div class="flex justify-end items-center pt-1 gap-3 text-[14px] font-semibold">
+                        <span>領款人：</span>
+                        <div id="a4-signature-box" class="w-52 h-11 border-b border-black flex items-center justify-center relative overflow-hidden">
+                          <!-- 簽章圖檔 -->
+                        </div>
+                        <span class="font-normal text-xs text-neutral-600">(簽章)</span>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <!-- 身分證（居留證／護照）影本黏貼處 (高度大於 64mm = 240px，框線細緻，對齊原版) -->
+                  <div class="mt-2 pt-1 border-t border-neutral-100">
+                    <div class="text-[13.5px] font-bold text-black mb-1.5">
+                      身分證（居留證 / 護照）影本黏貼處：
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3.5">
+                      <!-- 正面框 -->
+                      <div id="a4-id-front-slot" class="border border-neutral-600 h-[240px] p-2 flex flex-col items-center justify-center text-center bg-[#FAFAFA] relative overflow-hidden">
+                        <div class="text-neutral-500 text-[13px]">
+                          身分證（居留證 / 護照）影本 <span class="font-bold text-black">正面</span>
+                        </div>
+                      </div>
+
+                      <!-- 反面框 -->
+                      <div id="a4-id-back-slot" class="border border-neutral-600 h-[240px] p-2 flex flex-col items-center justify-center text-center bg-[#FAFAFA] relative overflow-hidden">
+                        <div class="text-neutral-500 text-[13px]">
+                          身分證（居留證 / 護照）影本 <span class="font-bold text-black">反面</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 底部浮水印 (靠右對齊、極小字體、淺灰、低調不影響正式感) -->
+                    <div class="text-right text-[10px] text-gray-400 pt-1.5 select-none font-sans tracking-wide">
+                      本單使用tool.hoodt.store免費製作
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- 最下方共用頁尾容器 (由 main.js 動態 fetch footer.html) -->
+    <div id="footer-placeholder"></div>
+
+    <!-- 共用下載感謝贊助彈窗容器 (由 main.js 動態 fetch download-modal.html) -->
+    <div id="modal-placeholder"></div>
+
+    <!-- 電子手寫板 Modal 彈窗 (純 CSS 柔和淡入淡出，無彈跳 zoom-in-95) -->
+    <div
+      id="modal-sig"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 transition-opacity duration-200 opacity-0 pointer-events-none"
+    >
+      <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-neutral-200 overflow-hidden flex flex-col transition-all duration-200">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-pen-nib text-[#0071E3] text-sm"></i>
+            <h3 class="text-base font-semibold text-neutral-900">領款人電子手寫簽名</h3>
+          </div>
+          <button
+            type="button"
+            id="btn-close-sig-modal"
+            class="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-full cursor-pointer"
+          >
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+        </div>
+
+        <!-- Canvas 手寫區域 -->
+        <div class="p-6 bg-neutral-50 flex flex-col items-center">
+          <div class="w-full h-56 bg-white rounded-xl border border-neutral-300 shadow-inner relative touch-none cursor-crosshair overflow-hidden">
+            <canvas id="canvas-pad" class="w-full h-full block"></canvas>
+            <div id="canvas-placeholder-tip" class="absolute inset-0 flex items-center justify-center pointer-events-none text-neutral-300 select-none text-sm">
+              請在此區域親筆手寫簽名或蓋章
+            </div>
+            <div class="absolute bottom-3 left-4 right-4 border-b border-dashed border-neutral-200 pointer-events-none"></div>
+          </div>
+
+          <!-- 工具欄 -->
+          <div class="w-full flex items-center justify-between mt-4">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-neutral-500">墨水筆觸：</span>
+              <button
+                type="button"
+                id="btn-ink-black"
+                class="w-6 h-6 rounded-full bg-black border-2 border-white ring-2 ring-[#0071E3] ring-offset-2 opacity-100 cursor-pointer"
+                title="經典黑墨"
+              ></button>
+              <button
+                type="button"
+                id="btn-ink-blue"
+                class="w-6 h-6 rounded-full bg-[#002B66] border-2 border-white opacity-70 hover:opacity-100 cursor-pointer"
+                title="鋼筆藍墨"
+              ></button>
+            </div>
+
+            <button
+              type="button"
+              id="btn-clear-canvas"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-neutral-600 hover:text-neutral-900 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-50 shadow-sm cursor-pointer"
+            >
+              <i class="fa-solid fa-arrow-rotate-left text-xs"></i>
+              <span>重簽清空</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-end gap-3 px-6 py-4 bg-white border-t border-neutral-100">
+          <button
+            type="button"
+            id="btn-cancel-modal"
+            class="px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-100 rounded-xl cursor-pointer"
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            id="btn-save-modal"
+            class="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-semibold text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-xl shadow-xs cursor-pointer"
+          >
+            <i class="fa-solid fa-check text-xs"></i>
+            <span>儲存簽名</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 引入全域共用腳本 (負責動態 fetch header.html 與 footer.html) -->
+    <script src="main.js"></script>
+
+    <!-- 5. 勞務報酬單工具核心業務邏輯 (Vanilla JS: 100% 對齊原版 React 邏輯與介面) -->
+    <script>
+      (function() {
+        // --- 常用銀行代碼清單 (取自原版 taiwanBanks.ts) ---
+        const TAIWAN_POPULAR_BANKS = [
+          { code: '004', name: '臺灣銀行' },
+          { code: '007', name: '第一商業銀行' },
+          { code: '008', name: '華南商業銀行' },
+          { code: '009', name: '彰化商業銀行' },
+          { code: '012', name: '台北富邦銀行' },
+          { code: '013', name: '國泰世華商業銀行' },
+          { code: '017', name: '兆豐國際商業銀行' },
+          { code: '050', name: '臺灣中小企業銀行' },
+          { code: '052', name: '渣打國際商業銀行' },
+          { code: '081', name: '滙豐(台灣)商業銀行' },
+          { code: '103', name: '新光商業銀行' },
+          { code: '108', name: '陽信商業銀行' },
+          { code: '700', name: '中華郵政' },
+          { code: '803', name: '聯邦商業銀行' },
+          { code: '807', name: '永豐商業銀行' },
+          { code: '808', name: '玉山商業銀行' },
+          { code: '812', name: '台新國際商業銀行' },
+          { code: '822', name: '中國信託商業銀行' }
+        ];
+
+        // --- 中文大寫數字字元 (金融專用) ---
+        const DIGITS = ['零', '壹', '貳', '參', '肆', '伍', '陸', '柒', '捌', '玖'];
+
+        // --- 預設資料 (100% 對齊原版 DEFAULT_REMUNERATION_DATA) ---
+        const todayStr = new Date().toISOString().split('T')[0];
+        const state = {
+          companyName: 'Hoodt. 線上雜貨店',
+          fillDate: todayStr,
+          recipientName: '張小明',
+          idNumber: 'A123456789',
+          contactPhone: '0912-345678',
+          nationality: 'domestic', // 'domestic' | 'foreign_over_183' | 'foreign_under_183'
+          householdAddress: '台北市信義區信義路五段7號',
+          contactAddress: '', // 預設為空
+          projectName: 'Hoodt.store電子勞報單製作工具開發專案',
+          periodStart: '2025-05-20',
+          periodEnd: '2026-02-17',
+          laborCategory: '', // 預設不勾選
+          laborCategoryOtherText: '',
+          totalAmount: 8888,
+          incomeCode: '9A',
+          healthInsuranceMode: 'auto', // 'auto' | 'exempt' | 'none'
+          paymentMethod: 'remittance', // 'remittance' | 'cash' | 'other'
+          paymentMethodOtherText: '',
+          bankAccountName: '張小明',
+          bankName: '013 國泰世華銀行',
+          bankAccount: '1234-5678-1221',
+          useDigitalSignature: false, // 預設紙本親簽
+          signatureImage: null,
+          idCardFront: null,
+          idCardBack: null
+        };
+
+        // --- 稅務計算核心 (100% 對齊原版 taxCalculator.ts) ---
+        function calculateTaxes(amount, incomeCode, healthMode, nationality) {
+          const total = Math.max(0, Math.floor(amount || 0));
+          let taxRate = 10;
+          let taxThreshold = 20000;
+
+          if (nationality === 'foreign_under_183') {
+            taxRate = 18;
+            taxThreshold = 0;
+          } else {
+            if (incomeCode === '50') {
+              taxRate = 5;
+              taxThreshold = 40001;
+            } else if (incomeCode === '9A' || incomeCode === '9B') {
+              taxRate = 10;
+              taxThreshold = 20000;
+            } else if (incomeCode === '51') {
+              taxRate = 10;
+              taxThreshold = 0;
+            }
+          }
+
+          let taxAmount = 0;
+          if (total >= taxThreshold && taxRate > 0) {
+            taxAmount = Math.round(total * (taxRate / 100));
+          }
+
+          let healthInsuranceAmount = 0;
+          if (nationality !== 'foreign_under_183' && healthMode === 'auto') {
+            if (total >= 20000) {
+              healthInsuranceAmount = Math.round(total * 0.0211);
+            }
+          }
+
+          const netAmount = Math.max(0, total - taxAmount - healthInsuranceAmount);
+          return { taxRate, taxAmount, healthInsuranceAmount, netAmount };
+        }
+
+        // --- 完整大寫國字金融金額轉換 (直接輸出完整大寫，如：壹拾貳萬捌仟捌佰捌拾捌元整，無填空與刪除線) ---
+        function numberToFullChinese(amount) {
+          const num = Math.max(0, Math.floor(amount || 0));
+          if (num === 0) return '零元整';
+
+          const digits = ['零', '壹', '貳', '參', '肆', '伍', '陸', '柒', '捌', '玖'];
+          const units = ['', '拾', '佰', '仟'];
+          const bigUnits = ['', '萬', '億', '兆'];
+
+          let numStr = num.toString();
+          const groups = [];
+          while (numStr.length > 0) {
+            groups.unshift(numStr.slice(-4));
+            numStr = numStr.slice(0, -4);
+          }
+
+          let result = '';
+          let needZero = false;
+
+          for (let i = 0; i < groups.length; i++) {
+            const group = groups[i];
+            const bigUnitIndex = groups.length - 1 - i;
+            let groupResult = '';
+            let groupZero = false;
+
+            for (let j = 0; j < group.length; j++) {
+              const digit = parseInt(group[j], 10);
+              const unitIndex = group.length - 1 - j;
+
+              if (digit === 0) {
+                if (groupResult.length > 0) {
+                  groupZero = true;
+                }
+              } else {
+                if (needZero || groupZero) {
+                  groupResult += '零';
+                  groupZero = false;
+                  needZero = false;
+                }
+                groupResult += digits[digit] + units[unitIndex];
+              }
+            }
+
+            if (groupResult.length > 0) {
+              result += groupResult + bigUnits[bigUnitIndex];
+              needZero = group[group.length - 1] === '0';
+            } else if (result.length > 0) {
+              needZero = true;
+            }
+          }
+
+          return (result || '零') + '元整';
+        }
+
+        // --- 產生 PrintBox 統一規格方框 (100% 對齊原版 PrintBox 元件) ---
+        function renderPrintBoxHtml(checked) {
+          return `
+            <span class="inline-flex items-center justify-center w-[13px] h-[13px] min-w-[13px] min-h-[13px] max-w-[13px] max-h-[13px] border border-neutral-700 rounded-[1px] bg-white mr-1.5 align-middle shrink-0 select-none">
+              ${checked ? `
+                <svg class="w-[10px] h-[10px] text-black stroke-[2.4]" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="2 6 4.5 9 10 3"></polyline>
+                </svg>
+              ` : ''}
+            </span>
+          `;
+        }
+
+        // --- DOM 元素獲取 ---
+        const inputCompanyName = document.getElementById('input-company-name');
+        const inputFillDate = document.getElementById('input-fill-date');
+        const btnCopyAddress = document.getElementById('btn-copy-address');
+
+        const inputRecipientName = document.getElementById('input-recipient-name');
+        const inputIdNumber = document.getElementById('input-id-number');
+        const inputPhone = document.getElementById('input-phone');
+        const inputHouseholdAddress = document.getElementById('input-household-address');
+        const inputContactAddress = document.getElementById('input-contact-address');
+
+        const inputProjectName = document.getElementById('input-project-name');
+        const inputProjectStart = document.getElementById('input-project-start');
+        const inputProjectEnd = document.getElementById('input-project-end');
+        const btnLaborCategoryClear = document.getElementById('btn-labor-category-clear');
+        const drawerLaborCategoryOther = document.getElementById('drawer-labor-category-other');
+        const inputLaborCategoryOtherText = document.getElementById('input-labor-category-other-text');
+
+        const inputTotalAmount = document.getElementById('input-total-amount');
+        const selectIncomeCode = document.getElementById('select-income-code');
+        const selectHealth = document.getElementById('select-health-insurance');
+        const summaryTaxAmount = document.getElementById('summary-tax-amount');
+        const summaryHealthAmount = document.getElementById('summary-health-amount');
+        const summaryNetAmount = document.getElementById('summary-net-amount');
+        const mobileSummaryTaxRate = document.getElementById('mobile-summary-tax-rate');
+        const mobileSummaryTaxAmount = document.getElementById('mobile-summary-tax-amount');
+        const mobileSummaryHealthAmount = document.getElementById('mobile-summary-health-amount');
+        const mobileSummaryNetAmount = document.getElementById('mobile-summary-net-amount');
+
+        const drawerPaymentMethodOther = document.getElementById('drawer-payment-method-other');
+        const inputPaymentMethodOtherText = document.getElementById('input-payment-method-other-text');
+        const bankInfoContainer = document.getElementById('bank-info-container');
+        const inputBankAccountName = document.getElementById('input-bank-account-name');
+        const inputBankName = document.getElementById('input-bank-name');
+        const inputBankAccount = document.getElementById('input-bank-account');
+        const btnToggleBankDropdown = document.getElementById('btn-toggle-bank-dropdown');
+        const bankDropdown = document.getElementById('bank-dropdown');
+        const inputSearchBank = document.getElementById('input-search-bank');
+        const bankListOptions = document.getElementById('bank-list-options');
+
+        const btnSigModePaper = document.getElementById('btn-sig-mode-paper');
+        const btnSigModeDigital = document.getElementById('btn-sig-mode-digital');
+        const drawerDigitalSig = document.getElementById('drawer-digital-sig');
+        const sigChoiceCards = document.getElementById('sig-choice-cards');
+        const sigPreviewCard = document.getElementById('sig-preview-card');
+        const imgSigPreview = document.getElementById('img-sig-preview');
+        const btnOpenSigModal = document.getElementById('btn-open-sig-modal');
+        const btnTriggerUploadSig = document.getElementById('btn-trigger-upload-sig');
+        const inputFileSig = document.getElementById('input-file-sig');
+        const btnReSig = document.getElementById('btn-re-sig');
+        const btnReUploadSig = document.getElementById('btn-re-upload-sig');
+        const btnClearSig = document.getElementById('btn-clear-sig');
+
+        const inputIdFront = document.getElementById('input-id-front');
+        const inputIdBack = document.getElementById('input-id-back');
+        const frontPlaceholderView = document.getElementById('front-placeholder-view');
+        const frontPreviewView = document.getElementById('front-preview-view');
+        const imgIdFront = document.getElementById('img-id-front');
+        const btnRemoveFront = document.getElementById('btn-remove-front');
+        const backPlaceholderView = document.getElementById('back-placeholder-view');
+        const backPreviewView = document.getElementById('back-preview-view');
+        const imgIdBack = document.getElementById('img-id-back');
+        const btnRemoveBack = document.getElementById('btn-remove-back');
+
+        // A4 預覽元素
+        const a4HeaderTitle = document.getElementById('a4-header-title');
+        const a4FillDateLabel = document.getElementById('a4-fill-date-label');
+        const a4DocumentNumber = document.getElementById('a4-document-number');
+        const a4RecipientName = document.getElementById('a4-recipient-name');
+        const a4ContactPhone = document.getElementById('a4-contact-phone');
+        const a4NationalityCells = document.getElementById('a4-nationality-cells');
+        const a4HouseholdAddress = document.getElementById('a4-household-address');
+        const a4ContactAddress = document.getElementById('a4-contact-address');
+        const a4ProjectName = document.getElementById('a4-project-name');
+        const a4ProjectDates = document.getElementById('a4-project-dates');
+        const a4LaborCategoryCells = document.getElementById('a4-labor-category-cells');
+        const a4TotalAmount = document.getElementById('a4-total-amount');
+        const a4TaxRate = document.getElementById('a4-tax-rate');
+        const a4TaxAmount = document.getElementById('a4-tax-amount');
+        const a4HealthAmount = document.getElementById('a4-health-amount');
+        const a4NetAmount = document.getElementById('a4-net-amount');
+        const a4PaymentMethodCells = document.getElementById('a4-payment-method-cells');
+        const a4BankAccountName = document.getElementById('a4-bank-account-name');
+        const a4BankName = document.getElementById('a4-bank-name');
+        const a4BankAccount = document.getElementById('a4-bank-account');
+        const a4LegalCompName = document.getElementById('a4-legal-comp-name');
+        const a4LegalCompName2 = document.getElementById('a4-legal-comp-name-2');
+        const a4ChineseSlotsArea = document.getElementById('a4-chinese-slots-area');
+        const a4SignatureBox = document.getElementById('a4-signature-box');
+        const a4IdFrontSlot = document.getElementById('a4-id-front-slot');
+        const a4IdBackSlot = document.getElementById('a4-id-back-slot');
+
+        // 初始化填表日期
+        inputFillDate.value = state.fillDate;
+
+        // --- 核心渲染函數 (完全依照原版 RemunerationSheet.tsx) ---
+        function render() {
+          // 1. 公司名稱與大標題 (冠在標題與授權條款)
+          const fullTitle = state.companyName.trim() ? `${state.companyName.trim()} 勞務報酬單` : '勞務報酬單';
+          a4HeaderTitle.textContent = fullTitle;
+          a4LegalCompName.textContent = state.companyName || '';
+          a4LegalCompName2.textContent = state.companyName || '';
+
+          // 2. 填表日期
+          const [y, m, d] = (state.fillDate || '2026-11-04').split('-');
+          a4FillDateLabel.textContent = `填表日期：西元 ${y || '2026'} 年 ${m || '11'} 月 ${d || '04'} 日`;
+
+          // 4. 基本資料
+          a4DocumentNumber.textContent = state.idNumber || '-';
+          a4RecipientName.textContent = state.recipientName || '-';
+          a4ContactPhone.textContent = state.contactPhone || '-';
+          a4HouseholdAddress.textContent = state.householdAddress || '-';
+          a4ContactAddress.textContent = state.contactAddress || '';
+
+          // 國籍身分勾選按鈕 (編輯區)
+          document.querySelectorAll('.nat-btn').forEach(btn => {
+            const val = btn.getAttribute('data-value');
+            const isActive = state.nationality === val;
+            btn.className = `nat-btn py-2 px-3 rounded-xl border text-xs font-medium flex items-center justify-between transition-all cursor-pointer ${
+              isActive
+                ? 'border-[#0071E3] bg-[#0071E3]/[0.04] text-[#0071E3] font-semibold'
+                : 'border-neutral-200 text-neutral-700 hover:border-neutral-300'
+            }`;
+            const icon = btn.querySelector('i');
+            if (icon) icon.classList.toggle('hidden', !isActive);
+          });
+
+          // A4 國籍身分欄 (跨兩列超寬不折行)
+          a4NationalityCells.innerHTML = `
+            <div class="flex items-center my-1">
+              ${renderPrintBoxHtml(state.nationality === 'domestic')}
+              <span>本國籍</span>
+            </div>
+            <div class="flex items-center my-1">
+              ${renderPrintBoxHtml(state.nationality === 'foreign_over_183')}
+              <span>外國籍 在台滿183天</span>
+            </div>
+            <div class="flex items-center my-1">
+              ${renderPrintBoxHtml(state.nationality === 'foreign_under_183')}
+              <span>外國籍 在台未滿183天</span>
+            </div>
+          `;
+
+          // 5. 勞務內容
+          a4ProjectName.textContent = state.projectName || '-';
+          const [sy, sm, sd] = (state.periodStart || '2025-05-20').split('-');
+          const [ey, em, ed] = (state.periodEnd || '2026-02-17').split('-');
+          a4ProjectDates.textContent = `自 西元 ${sy} 年 ${sm} 月 ${sd} 日 至 西元 ${ey} 年 ${em} 月 ${ed} 日 止`;
+
+          document.querySelectorAll('.labor-cat-btn').forEach(btn => {
+            const val = btn.getAttribute('data-value');
+            const isActive = state.laborCategory === val;
+            btn.className = `labor-cat-btn py-2 px-3 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+              isActive
+                ? 'border-[#0071E3] bg-[#0071E3]/[0.04] text-[#0071E3] font-semibold'
+                : 'border-neutral-200 text-neutral-700 hover:border-neutral-300'
+            }`;
+          });
+          btnLaborCategoryClear.classList.toggle('hidden', !state.laborCategory);
+          if (state.laborCategory === 'other') {
+            drawerLaborCategoryOther.className = 'overflow-hidden transition-all duration-300 ease-out max-h-14 opacity-100 mt-2';
+          } else {
+            drawerLaborCategoryOther.className = 'overflow-hidden transition-all duration-300 ease-out max-h-0 opacity-0 mt-0 pointer-events-none';
+          }
+
+          // A4 勞務類別項目渲染
+          let laborOtherLabel = '其他：';
+          let laborOtherChecked = state.laborCategory === 'other';
+          if (state.laborCategory === 'other' && state.laborCategoryOtherText.trim()) {
+            laborOtherLabel = state.laborCategoryOtherText.trim();
+            laborOtherChecked = true;
+          }
+
+          a4LaborCategoryCells.innerHTML = `
+            <span class="inline-flex items-center whitespace-nowrap">
+              ${renderPrintBoxHtml(state.laborCategory === 'article')}
+              <span>稿費</span>
+            </span>
+            <span class="inline-flex items-center whitespace-nowrap">
+              ${renderPrintBoxHtml(state.laborCategory === 'production')}
+              <span>製作費</span>
+            </span>
+            <span class="inline-flex items-center whitespace-nowrap ${state.laborCategory === 'other' && state.laborCategoryOtherText.trim() ? 'font-medium' : ''}">
+              ${renderPrintBoxHtml(laborOtherChecked)}
+              <span>${laborOtherLabel}</span>
+            </span>
+          `;
+
+          // 6. 款項資訊與試算 (4/6 開分割)
+          const taxes = calculateTaxes(state.totalAmount, state.incomeCode, state.healthInsuranceMode, state.nationality);
+          a4TotalAmount.textContent = Number(state.totalAmount || 0).toLocaleString();
+          a4TaxRate.textContent = taxes.taxRate;
+          a4TaxAmount.textContent = taxes.taxAmount.toLocaleString();
+          a4HealthAmount.textContent = taxes.healthInsuranceAmount.toLocaleString();
+          a4NetAmount.textContent = taxes.netAmount.toLocaleString();
+
+          if (mobileSummaryTaxRate) mobileSummaryTaxRate.textContent = `${taxes.taxRate}`;
+          if (mobileSummaryTaxAmount) mobileSummaryTaxAmount.textContent = `TWD$ ${taxes.taxAmount.toLocaleString()}`;
+          if (mobileSummaryHealthAmount) mobileSummaryHealthAmount.textContent = `TWD$ ${taxes.healthInsuranceAmount.toLocaleString()}`;
+          if (mobileSummaryNetAmount) mobileSummaryNetAmount.textContent = `TWD$ ${taxes.netAmount.toLocaleString()}`;
+
+          summaryTaxAmount.textContent = `TWD$ ${taxes.taxAmount.toLocaleString()}`;
+          summaryHealthAmount.textContent = `TWD$ ${taxes.healthInsuranceAmount.toLocaleString()}`;
+          summaryNetAmount.textContent = `TWD$ ${taxes.netAmount.toLocaleString()}`;
+
+          // 付款方式
+          document.querySelectorAll('.pay-method-btn').forEach(btn => {
+            const val = btn.getAttribute('data-value');
+            const isActive = state.paymentMethod === val;
+            btn.className = `pay-method-btn py-2 px-3 rounded-xl border text-xs font-medium transition-all duration-150 cursor-pointer ${
+              isActive
+                ? 'border-[#0071E3] bg-[#0071E3]/[0.04] text-[#0071E3] font-semibold'
+                : 'border-neutral-200 text-neutral-700 hover:border-neutral-300'
+            }`;
+          });
+
+          if (state.paymentMethod === 'other') {
+            drawerPaymentMethodOther.className = 'overflow-hidden transition-all duration-300 ease-out max-h-14 opacity-100 mt-2';
+          } else {
+            drawerPaymentMethodOther.className = 'overflow-hidden transition-all duration-300 ease-out max-h-0 opacity-0 mt-0 pointer-events-none';
+          }
+
+          // 付款方式選擇現金或其他時：帳戶欄位純 CSS 漸變反灰鎖定，不顯示說明文字，A4 顯示「-」
+          const isAccountLocked = state.paymentMethod !== 'remittance';
+          bankInfoContainer.className = `transition-all duration-300 ease-out rounded-xl ${
+            isAccountLocked ? 'opacity-35 grayscale select-none pointer-events-none' : 'opacity-100'
+          }`;
+          inputBankAccountName.disabled = isAccountLocked;
+          inputBankName.disabled = isAccountLocked;
+          inputBankAccount.disabled = isAccountLocked;
+          btnToggleBankDropdown.disabled = isAccountLocked;
+          btnToggleBankDropdown.style.opacity = isAccountLocked ? '0' : '1';
+
+          let payMethodOtherLabel = '其他：';
+          let payMethodOtherChecked = state.paymentMethod === 'other';
+          if (state.paymentMethod === 'other' && state.paymentMethodOtherText.trim()) {
+            payMethodOtherLabel = state.paymentMethodOtherText.trim();
+            payMethodOtherChecked = true;
+          }
+
+          a4PaymentMethodCells.innerHTML = `
+            <span class="font-medium shrink-0">付款方式：</span>
+            <span class="inline-flex items-center shrink-0">
+              ${renderPrintBoxHtml(state.paymentMethod === 'cash')}
+              <span>現金</span>
+            </span>
+            <span class="inline-flex items-center shrink-0">
+              ${renderPrintBoxHtml(state.paymentMethod === 'remittance')}
+              <span>匯款</span>
+            </span>
+            <span class="inline-flex items-center shrink-0 ${state.paymentMethod === 'other' && state.paymentMethodOtherText.trim() ? 'font-medium' : ''}">
+              ${renderPrintBoxHtml(payMethodOtherChecked)}
+              <span>${payMethodOtherLabel}</span>
+            </span>
+          `;
+
+          if (isAccountLocked) {
+            a4BankAccountName.textContent = '-';
+            a4BankName.textContent = '-';
+            a4BankAccount.textContent = '-';
+          } else {
+            a4BankAccountName.textContent = state.bankAccountName || '-';
+            a4BankName.textContent = state.bankName || '-';
+            a4BankAccount.textContent = state.bankAccount || '-';
+          }
+
+          // 7. 大寫國字金融金額 (依要求：直接列出完整大寫，如：新台幣壹拾貳萬捌仟捌佰捌拾捌元整，不使用填空與刪除線)
+          a4ChineseSlotsArea.textContent = numberToFullChinese(state.totalAmount);
+
+          // 8. 簽署模式切換與預覽 (對齊原版)
+          btnSigModePaper.className = `px-3 py-1 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer ${
+            !state.useDigitalSignature ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:text-neutral-900'
+          }`;
+          btnSigModeDigital.className = `px-3 py-1 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer ${
+            state.useDigitalSignature ? 'bg-[#0071E3] text-white' : 'bg-neutral-100 text-neutral-600 hover:text-neutral-900'
+          }`;
+
+          if (state.useDigitalSignature) {
+            drawerDigitalSig.className = 'overflow-hidden transition-all duration-300 ease-out max-h-72 opacity-100 mb-4';
+            if (state.signatureImage) {
+              sigChoiceCards.classList.add('hidden');
+              sigPreviewCard.classList.remove('hidden');
+              imgSigPreview.src = state.signatureImage;
+              a4SignatureBox.innerHTML = `<img src="${state.signatureImage}" alt="電子簽名" class="max-h-10 max-w-full object-contain" />`;
+            } else {
+              sigChoiceCards.classList.remove('hidden');
+              sigPreviewCard.classList.add('hidden');
+              a4SignatureBox.innerHTML = ``;
+            }
+          } else {
+            drawerDigitalSig.className = 'overflow-hidden transition-all duration-300 ease-out max-h-0 opacity-0 mb-0 pointer-events-none';
+            a4SignatureBox.innerHTML = ``;
+          }
+
+          // 9. 身分證影本 (100% 對齊原版高度 245px 與浮水印覆蓋層)
+          if (state.idCardFront) {
+            frontPlaceholderView.classList.add('hidden');
+            frontPreviewView.classList.remove('hidden');
+            imgIdFront.src = state.idCardFront;
+            a4IdFrontSlot.innerHTML = `
+              <div class="relative w-full h-full flex items-center justify-center">
+                <img src="${state.idCardFront}" alt="身分證正面" class="max-h-[230px] max-w-full object-contain rounded" />
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span class="text-xs font-semibold text-red-600/75 rotate-[-15deg] border border-red-500/60 px-2 py-0.5 rounded bg-white/40 shadow-xs">
+                    僅供辦理勞務報酬相關業務使用 他用無效
+                  </span>
+                </div>
+              </div>
+            `;
+          } else {
+            frontPlaceholderView.classList.remove('hidden');
+            frontPreviewView.classList.add('hidden');
+            a4IdFrontSlot.innerHTML = `
+              <div class="text-neutral-500 text-xs">
+                身分證（居留證 / 護照）影本 <span class="font-bold text-black">正面</span>
+              </div>
+            `;
+          }
+
+          if (state.idCardBack) {
+            backPlaceholderView.classList.add('hidden');
+            backPreviewView.classList.remove('hidden');
+            imgIdBack.src = state.idCardBack;
+            a4IdBackSlot.innerHTML = `
+              <div class="relative w-full h-full flex items-center justify-center">
+                <img src="${state.idCardBack}" alt="身分證反面" class="max-h-[230px] max-w-full object-contain rounded" />
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span class="text-xs font-semibold text-red-600/75 rotate-[-15deg] border border-red-500/60 px-2 py-0.5 rounded bg-white/40 shadow-xs">
+                    僅供辦理勞務報酬相關業務使用 他用無效
+                  </span>
+                </div>
+              </div>
+            `;
+          } else {
+            backPlaceholderView.classList.remove('hidden');
+            backPreviewView.classList.add('hidden');
+            a4IdBackSlot.innerHTML = `
+              <div class="text-neutral-500 text-xs">
+                身分證（居留證 / 護照）影本 <span class="font-bold text-black">反面</span>
+              </div>
+            `;
+          }
+        }
+
+        // --- 常用銀行代碼選單 ---
+        function renderBankOptions(search) {
+          const q = (search || '').trim().toLowerCase();
+          const filtered = TAIWAN_POPULAR_BANKS.filter(b => b.code.includes(q) || b.name.toLowerCase().includes(q));
+          bankListOptions.innerHTML = filtered.map(b => `
+            <button
+              type="button"
+              data-code="${b.code}"
+              data-name="${b.name}"
+              class="bank-option-btn w-full text-left px-2 py-1.5 text-xs hover:bg-neutral-100 rounded-md flex items-center justify-between cursor-pointer"
+            >
+              <span>${b.name}</span>
+              <span class="font-mono text-neutral-400">${b.code}</span>
+            </button>
+          `).join('');
+
+          bankListOptions.querySelectorAll('.bank-option-btn').forEach(btn => {
+            btn.onclick = () => {
+              const code = btn.getAttribute('data-code');
+              const name = btn.getAttribute('data-name');
+              state.bankName = `${code} ${name}`;
+              inputBankName.value = state.bankName;
+              closeBankDropdown();
+              render();
+            };
+          });
+        }
+
+        function closeBankDropdown() {
+          bankDropdown.className = 'absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-xl z-30 p-2 max-h-48 overflow-y-auto transition-all duration-200 ease-out opacity-0 -translate-y-1 pointer-events-none';
+        }
+        function openBankDropdown() {
+          bankDropdown.className = 'absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-xl z-30 p-2 max-h-48 overflow-y-auto transition-all duration-200 ease-out opacity-100 translate-y-0 pointer-events-auto';
+          renderBankOptions(inputSearchBank.value);
+        }
+
+        btnToggleBankDropdown.onclick = (e) => {
+          e.stopPropagation();
+          if (bankDropdown.classList.contains('opacity-0')) {
+            openBankDropdown();
+          } else {
+            closeBankDropdown();
+          }
+        };
+        inputSearchBank.oninput = (e) => renderBankOptions(e.target.value);
+        document.addEventListener('click', (e) => {
+          if (!bankDropdown.contains(e.target) && e.target !== btnToggleBankDropdown) {
+            closeBankDropdown();
+          }
+        });
+
+        // --- 事件綁定 ---
+        inputCompanyName.oninput = (e) => { state.companyName = e.target.value; render(); };
+        inputFillDate.onchange = (e) => { state.fillDate = e.target.value; render(); };
+
+        btnCopyAddress.onclick = () => {
+          state.contactAddress = state.householdAddress;
+          inputContactAddress.value = state.contactAddress;
+          render();
+        };
+
+        document.querySelectorAll('.nat-btn').forEach(btn => {
+          btn.onclick = () => {
+            state.nationality = btn.getAttribute('data-value');
+            render();
+          };
+        });
+
+        inputRecipientName.oninput = (e) => { state.recipientName = e.target.value; render(); };
+        inputIdNumber.oninput = (e) => { state.idNumber = e.target.value.toUpperCase(); render(); };
+        inputPhone.oninput = (e) => { state.phone = e.target.value; render(); };
+        inputHouseholdAddress.oninput = (e) => { state.householdAddress = e.target.value; render(); };
+        inputContactAddress.oninput = (e) => { state.contactAddress = e.target.value; render(); };
+
+        inputProjectName.oninput = (e) => { state.projectName = e.target.value; render(); };
+        inputProjectStart.onchange = (e) => { state.projectStart = e.target.value; render(); };
+        inputProjectEnd.onchange = (e) => { state.projectEnd = e.target.value; render(); };
+
+        document.querySelectorAll('.labor-cat-btn').forEach(btn => {
+          btn.onclick = () => {
+            const val = btn.getAttribute('data-value');
+            state.laborCategory = state.laborCategory === val ? '' : val;
+            render();
+          };
+        });
+        btnLaborCategoryClear.onclick = () => {
+          state.laborCategory = '';
+          state.laborCategoryOtherText = '';
+          inputLaborCategoryOtherText.value = '';
+          render();
+        };
+        inputLaborCategoryOtherText.oninput = (e) => { state.laborCategoryOtherText = e.target.value; render(); };
+
+        inputTotalAmount.oninput = (e) => {
+          state.totalAmount = Math.max(0, parseInt(e.target.value, 10) || 0);
+          render();
+        };
+        selectIncomeCode.onchange = (e) => { state.incomeCode = e.target.value; render(); };
+        selectHealth.onchange = (e) => { state.healthInsuranceMode = e.target.value; render(); };
+
+        document.querySelectorAll('.pay-method-btn').forEach(btn => {
+          btn.onclick = () => {
+            state.paymentMethod = btn.getAttribute('data-value');
+            render();
+          };
+        });
+        inputPaymentMethodOtherText.oninput = (e) => { state.paymentMethodOtherText = e.target.value; render(); };
+        inputBankAccountName.oninput = (e) => { state.bankAccountName = e.target.value; render(); };
+        inputBankName.oninput = (e) => { state.bankName = e.target.value; render(); };
+        inputBankAccount.oninput = (e) => { state.bankAccount = e.target.value; render(); };
+
+        btnSigModePaper.onclick = () => { state.useDigitalSignature = false; render(); };
+        btnSigModeDigital.onclick = () => { state.useDigitalSignature = true; render(); };
+
+        // 圖片上傳壓縮工具 (維持原版 imageCompressor.ts 邏輯，避免 QuotaExceededError)
+        function compressFile(file, maxDimension = 1280, quality = 0.85) {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const img = new Image();
+              img.onload = () => {
+                let { width, height } = img;
+                if (width > maxDimension || height > maxDimension) {
+                  if (width > height) {
+                    height = Math.round((height * maxDimension) / width);
+                    width = maxDimension;
+                  } else {
+                    width = Math.round((width * maxDimension) / height);
+                    height = maxDimension;
+                  }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+              };
+              img.onerror = reject;
+              img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        }
+
+        // 簽名上傳
+        btnTriggerUploadSig.onclick = () => inputFileSig.click();
+        btnReUploadSig.onclick = () => inputFileSig.click();
+        inputFileSig.onchange = async (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          try {
+            const dataUrl = await compressFile(file, 800, 0.9);
+            state.signatureImage = dataUrl;
+            state.useDigitalSignature = true;
+            render();
+          } catch (err) {
+            alert('讀取簽名檔失敗，請再試一次');
+          } finally {
+            inputFileSig.value = '';
+          }
+        };
+        btnClearSig.onclick = () => {
+          state.signatureImage = null;
+          render();
+        };
+
+        // 證件上傳
+        frontPlaceholderView.onclick = () => inputIdFront.click();
+        inputIdFront.onchange = async (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          try {
+            state.idCardFront = await compressFile(file);
+            render();
+          } catch (err) {
+            alert('照片讀取失敗，請再試一次');
+          } finally {
+            inputIdFront.value = '';
+          }
+        };
+        btnRemoveFront.onclick = (e) => {
+          e.stopPropagation();
+          state.idCardFront = null;
+          render();
+        };
+
+        backPlaceholderView.onclick = () => inputIdBack.click();
+        inputIdBack.onchange = async (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          try {
+            state.idCardBack = await compressFile(file);
+            render();
+          } catch (err) {
+            alert('照片讀取失敗，請再試一次');
+          } finally {
+            inputIdBack.value = '';
+          }
+        };
+        btnRemoveBack.onclick = (e) => {
+          e.stopPropagation();
+          state.idCardBack = null;
+          render();
+        };
+
+        // --- 手寫簽名板 Modal 與 Canvas 操作 ---
+        const modalSig = document.getElementById('modal-sig');
+        const btnCloseSigModal = document.getElementById('btn-close-sig-modal');
+        const btnCancelModal = document.getElementById('btn-cancel-modal');
+        const btnSaveModal = document.getElementById('btn-save-modal');
+        const btnClearCanvas = document.getElementById('btn-clear-canvas');
+        const canvasPad = document.getElementById('canvas-pad');
+        const canvasTip = document.getElementById('canvas-placeholder-tip');
+        const btnInkBlack = document.getElementById('btn-ink-black');
+        const btnInkBlue = document.getElementById('btn-ink-blue');
+
+        let isDrawing = false;
+        let hasContent = false;
+        let inkColor = '#000000';
+        let ctxPad = null;
+
+        function openSignatureModal() {
+          modalSig.classList.remove('opacity-0', 'pointer-events-none');
+          initPadCanvas();
+        }
+        function closeSignatureModal() {
+          modalSig.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        btnOpenSigModal.onclick = openSignatureModal;
+        btnReSig.onclick = openSignatureModal;
+        btnCloseSigModal.onclick = closeSignatureModal;
+        btnCancelModal.onclick = closeSignatureModal;
+
+        function initPadCanvas() {
+          const rect = canvasPad.getBoundingClientRect();
+          const dpr = window.devicePixelRatio || 2;
+          canvasPad.width = rect.width * dpr;
+          canvasPad.height = rect.height * dpr;
+          ctxPad = canvasPad.getContext('2d');
+          ctxPad.scale(dpr, dpr);
+          ctxPad.lineCap = 'round';
+          ctxPad.lineJoin = 'round';
+          ctxPad.lineWidth = 2.5;
+          ctxPad.strokeStyle = inkColor;
+
+          if (state.signatureImage) {
+            const img = new Image();
+            img.onload = () => {
+              ctxPad.drawImage(img, 0, 0, rect.width, rect.height);
+              hasContent = true;
+              canvasTip.classList.add('hidden');
+            };
+            img.src = state.signatureImage;
+          } else {
+            ctxPad.clearRect(0, 0, rect.width, rect.height);
+            hasContent = false;
+            canvasTip.classList.remove('hidden');
+          }
+        }
+
+        btnInkBlack.onclick = () => {
+          inkColor = '#000000';
+          if (ctxPad) ctxPad.strokeStyle = inkColor;
+          btnInkBlack.className = 'w-6 h-6 rounded-full bg-black border-2 border-white ring-2 ring-[#0071E3] ring-offset-2 opacity-100 cursor-pointer';
+          btnInkBlue.className = 'w-6 h-6 rounded-full bg-[#002B66] border-2 border-white opacity-70 hover:opacity-100 cursor-pointer';
+        };
+        btnInkBlue.onclick = () => {
+          inkColor = '#002B66';
+          if (ctxPad) ctxPad.strokeStyle = inkColor;
+          btnInkBlue.className = 'w-6 h-6 rounded-full bg-[#002B66] border-2 border-white ring-2 ring-[#0071E3] ring-offset-2 opacity-100 cursor-pointer';
+          btnInkBlack.className = 'w-6 h-6 rounded-full bg-black border-2 border-white opacity-70 hover:opacity-100 cursor-pointer';
+        };
+
+        function getPos(e) {
+          const rect = canvasPad.getBoundingClientRect();
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+          return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function startDrawing(e) {
+          e.preventDefault();
+          if (!ctxPad) return;
+          isDrawing = true;
+          const pos = getPos(e);
+          ctxPad.beginPath();
+          ctxPad.moveTo(pos.x, pos.y);
+          hasContent = true;
+          canvasTip.classList.add('hidden');
+        }
+        function draw(e) {
+          if (!isDrawing || !ctxPad) return;
+          e.preventDefault();
+          const pos = getPos(e);
+          ctxPad.lineTo(pos.x, pos.y);
+          ctxPad.stroke();
+        }
+        function stopDrawing() {
+          isDrawing = false;
+        }
+
+        canvasPad.addEventListener('mousedown', startDrawing);
+        canvasPad.addEventListener('mousemove', draw);
+        window.addEventListener('mouseup', stopDrawing);
+        canvasPad.addEventListener('touchstart', startDrawing);
+        canvasPad.addEventListener('touchmove', draw);
+        window.addEventListener('touchend', stopDrawing);
+
+        btnClearCanvas.onclick = () => {
+          if (!ctxPad) return;
+          const rect = canvasPad.getBoundingClientRect();
+          ctxPad.clearRect(0, 0, rect.width, rect.height);
+          hasContent = false;
+          canvasTip.classList.remove('hidden');
+        };
+
+        btnSaveModal.onclick = () => {
+          if (!hasContent) {
+            closeSignatureModal();
+            return;
+          }
+          state.signatureImage = canvasPad.toDataURL('image/png');
+          state.useDigitalSignature = true;
+          closeSignatureModal();
+          render();
+        };
+
+        // --- A4 等比縮放計算 ---
+        const previewViewportContainer = document.getElementById('preview-viewport-container');
+        const printArea = document.getElementById('print-area');
+        const paper = document.getElementById('remuneration-sheet-paper');
+        const BASE_WIDTH = 794;
+        const BASE_HEIGHT = 1123;
+
+        function updateA4Scale() {
+          if (!previewViewportContainer || !paper) return;
+          const containerWidth = previewViewportContainer.clientWidth;
+          const horizontalPadding = window.innerWidth < 640 ? 24 : 48;
+          const availableWidth = Math.max(120, containerWidth - horizontalPadding);
+          const scale = Math.min(1, availableWidth / BASE_WIDTH);
+
+          printArea.style.width = `${BASE_WIDTH * scale}px`;
+          printArea.style.height = `${BASE_HEIGHT * scale}px`;
+          printArea.style.maxWidth = '100%';
+          printArea.style.overflow = 'hidden';
+          paper.style.transform = `scale(${scale})`;
+        }
+        window.addEventListener('resize', updateA4Scale);
+        new ResizeObserver(updateA4Scale).observe(previewViewportContainer);
+
+        // 視窗尺寸變化時更新 A4 等比縮放
+        window.addEventListener('resize', updateA4Scale, { passive: true });
+
+
+        // --- 匯出功能：另存成圖片 (PNG) 與 下載 PDF ---
+        const btnDownloadImage = document.getElementById('btn-download-image');
+        const txtDownloadImage = document.getElementById('txt-download-image');
+        const btnDownloadPdf = document.getElementById('btn-download-pdf');
+        const txtDownloadPdf = document.getElementById('txt-download-pdf');
+
+        function getExportFileName(ext) {
+          const comp = state.companyName.trim() ? `${state.companyName.trim()}_` : '';
+          const name = state.recipientName.trim() || '領款人';
+          return `${comp}勞務報酬單_${name}.${ext}`;
+        }
+
+        // 另存成圖片
+        btnDownloadImage.onclick = async () => {
+          try {
+            txtDownloadImage.textContent = '產生中...';
+            btnDownloadImage.disabled = true;
+
+            // 確保 Google Fonts 與所有字型已完全就緒，避免 canvas 測量 fallback 字型導致文字/數字位移
+            if (document.fonts) {
+              await document.fonts.ready;
+            }
+
+            const originalTransform = paper.style.transform;
+            paper.style.transform = 'none';
+
+            const canvas = await html2canvas(paper, {
+              scale: 2,
+              useCORS: true,
+              backgroundColor: '#ffffff',
+              logging: false,
+              scrollX: 0,
+              scrollY: 0,
+              windowWidth: 794,
+              windowHeight: 1123
+            });
+
+            paper.style.transform = originalTransform;
+
+            const link = document.createElement('a');
+            link.download = getExportFileName('png');
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+
+            // 下載成功後彈出贊助感謝視窗
+            if (typeof window.showDownloadModal === 'function') {
+              window.showDownloadModal();
+            }
+          } catch (err) {
+            console.error('另存成圖片失敗:', err);
+            alert('圖片產生失敗，請稍後重試。');
+          } finally {
+            txtDownloadImage.textContent = '另存成圖片';
+            btnDownloadImage.disabled = false;
+          }
+        };
+
+        // 下載 PDF
+        btnDownloadPdf.onclick = async () => {
+          try {
+            txtDownloadPdf.textContent = '產生 PDF...';
+            btnDownloadPdf.disabled = true;
+
+            // 確保字型完全載入就緒
+            if (document.fonts) {
+              await document.fonts.ready;
+            }
+
+            const originalTransform = paper.style.transform;
+            paper.style.transform = 'none';
+
+            const canvas = await html2canvas(paper, {
+              scale: 2,
+              useCORS: true,
+              backgroundColor: '#ffffff',
+              logging: false,
+              scrollX: 0,
+              scrollY: 0,
+              windowWidth: 794,
+              windowHeight: 1123
+            });
+
+            paper.style.transform = originalTransform;
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.98);
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+              orientation: 'portrait',
+              unit: 'mm',
+              format: 'a4'
+            });
+
+            const imgWidth = 210;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+            pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+            pdf.save(getExportFileName('pdf'));
+
+            // 下載成功後彈出贊助感謝視窗
+            if (typeof window.showDownloadModal === 'function') {
+              window.showDownloadModal();
+            }
+          } catch (err) {
+            console.error('下載 PDF 失敗，切換為系統列印備援:', err);
+            window.print();
+          } finally {
+            txtDownloadPdf.textContent = '下載 PDF';
+            btnDownloadPdf.disabled = false;
+          }
+        };
+
+        // 首次初始化
+        render();
+        updateA4Scale();
+      })();
+    </script>
+  </body>
+</html>

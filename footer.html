@@ -1,0 +1,32 @@
+<footer class="no-print mt-8 border-t border-gray-200 py-6 text-sm text-gray-500">
+  <div class="max-w-[1520px] mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 text-left">
+    <!-- 【左側內容】 純文字版權聲明 -->
+    <div>
+      Copyright © 2026 Hoodt.Tool線上工具箱 版權所有
+    </div>
+
+    <!-- 【右側內容 (連結群組)】 包含使用條款與請我喝咖啡 (Tooltip) -->
+    <div class="flex items-center gap-2">
+      <!-- 使用條款 & 請我喝咖啡-->
+      <a href="terms.html" target="_blank" rel="noopener noreferrer" class="hover:text-gray-800 transition-colors">
+        使用條款
+      </a>
+      <div>｜</div>
+      <div class="relative group inline-flex items-center">
+        <a href="https://s.shopee.tw/906ZGkcKwu" target="_blank" rel="noopener noreferrer" class="hover:text-gray-800 transition-colors">
+          請我喝咖啡
+        </a>
+
+        <!-- 純 CSS Tooltip: 說明區塊與圈圈問號置右對齊，並兼顧手機窄螢幕防跑版 -->
+        <div
+          class="absolute bottom-full left-1/2 -translate-x-[40%] sm:left-auto sm:translate-x-0 sm:right-0 mb-2.5 w-64 sm:w-72 max-w-[calc(100vw-2.5rem)] p-3 bg-gray-900/95 backdrop-blur-sm text-white text-xs leading-relaxed rounded-xl shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-200 z-50 text-left"
+          role="tooltip"
+        >
+          透過此連結前往蝦皮購物，您的結帳金額不變，但我能獲得微薄的分潤獎金支持網站運作！
+          <!-- Tooltip 對話框底端指示箭頭 (精確對齊圈圈問號正上方) -->
+          <div class="absolute top-full left-[40%] sm:left-auto sm:right-2 -mt-1 border-4 border-transparent border-t-gray-900/95"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
