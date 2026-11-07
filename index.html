@@ -106,20 +106,17 @@
 
       /* 確保 A4 單據中英文與數字字體統一，防止匯出時文字或數字垂直位移 */
       #remuneration-sheet-paper,
-      #remuneration-sheet-paper *,
-      [id^="remuneration-sheet-paper"],
-      [id^="remuneration-sheet-paper"] * {
+      #remuneration-sheet-paper * {
         font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Microsoft JhengHei', sans-serif !important;
       }
 
-      /* 表格欄位嚴格垂直居中對齊與一致行高，消除 iOS WebKit 與 html2canvas 文字上下位移 */
-      [id^="remuneration-sheet-paper"] table {
+      /* 表格欄位嚴格垂直居中對齊 */
+      #remuneration-sheet-paper table {
         border-collapse: collapse;
       }
-      [id^="remuneration-sheet-paper"] th,
-      [id^="remuneration-sheet-paper"] td {
+      #remuneration-sheet-paper th,
+      #remuneration-sheet-paper td {
         vertical-align: middle !important;
-        line-height: 1.35 !important;
       }
 
       /* 表格分區大標題 (領款人基本資料、勞務內容、款項資訊) 精準居中，消除 html2canvas 表頭垂直位移 */
@@ -1080,7 +1077,7 @@
 
                     <!-- 底部浮水印 (靠右對齊、極小字體、淺灰、低調不影響正式感) -->
                     <div class="text-right text-[10px] text-gray-400 pt-1.5 select-none font-sans tracking-wide">
-                      本單使用tool.hoodt.store免費製作
+                      本單使用 tool.hoodt.store 製作
                     </div>
                   </div>
 
@@ -2081,58 +2078,50 @@
           }, 1000);
         }
 
-        // 核心 A4 畫布捕獲：透過完全隔離的獨立 794x1123 沙盒容器渲染，徹底杜絕 iPhone / 行動裝置在縮放或滾動時造成的字體基準線與表格欄位垂直位移
+        // 核心 A4 畫布捕獲：在即時節點上進行無偏差渲染，透過暫時回頂與解除縮放，完美兼顧電腦與手機的像素級對齊
         async function captureA4Canvas() {
           if (document.fonts) {
             await document.fonts.ready;
           }
 
-          // 建立一個完全隔離、固定 794x1123 的容器，置於可視區外 (不可使用 display: none，否則 canvas 無法測量文字)
-          const container = document.createElement('div');
-          container.style.position = 'fixed';
-          container.style.left = '-9999px';
-          container.style.top = '0';
-          container.style.width = '794px';
-          container.style.height = '1123px';
-          container.style.overflow = 'hidden';
-          container.style.zIndex = '-9999';
-          container.style.backgroundColor = '#ffffff';
+          const prevScrollX = window.scrollX;
+          const prevScrollY = window.scrollY;
+          const originalTransform = paper.style.transform;
+          const originalBorder = paper.style.border;
+          const originalShadow = paper.style.boxShadow;
+          const origPrintWidth = printArea.style.width;
+          const origPrintHeight = printArea.style.height;
 
-          // 深度複製目前即時渲染的 A4 paper
-          const clone = paper.cloneNode(true);
-          clone.id = 'remuneration-sheet-paper-clone';
-          clone.style.transform = 'none';
-          clone.style.boxShadow = 'none';
-          clone.style.border = 'none';
-          clone.style.margin = '0';
-          clone.style.width = '794px';
-          clone.style.height = '1123px';
-          clone.style.minHeight = '1123px';
-          clone.style.maxHeight = '1123px';
+          // 1. 暫時將視窗滾動至最頂端 (0, 0)，避免手機或電腦滾動時產生 Canvas 座標位移
+          window.scrollTo(0, 0);
 
-          container.appendChild(clone);
-          document.body.appendChild(container);
+          // 2. 暫時將容器與紙張還原為標準 794x1123，移除外框與陰影干擾
+          printArea.style.width = '794px';
+          printArea.style.height = '1123px';
+          paper.style.transform = 'none';
+          paper.style.border = 'none';
+          paper.style.boxShadow = 'none';
 
           try {
-            const canvas = await html2canvas(clone, {
+            const canvas = await html2canvas(paper, {
               scale: 2,
               useCORS: true,
               backgroundColor: '#ffffff',
               logging: false,
-              width: 794,
-              height: 1123,
-              windowWidth: 794,
-              windowHeight: 1123,
               scrollX: 0,
               scrollY: 0,
-              x: 0,
-              y: 0
+              windowWidth: 794,
+              windowHeight: 1123
             });
             return canvas;
           } finally {
-            if (container.parentNode) {
-              container.parentNode.removeChild(container);
-            }
+            // 3. 立即無縫還原原畫面與縮放狀態
+            printArea.style.width = origPrintWidth;
+            printArea.style.height = origPrintHeight;
+            paper.style.transform = originalTransform;
+            paper.style.border = originalBorder;
+            paper.style.boxShadow = originalShadow;
+            window.scrollTo(prevScrollX, prevScrollY);
           }
         }
 
