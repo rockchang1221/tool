@@ -2078,10 +2078,17 @@
           }, 1000);
         }
 
-        // 核心 A4 畫布捕獲：在即時節點上進行無偏差渲染，透過暫時回頂與解除縮放，完美兼顧電腦與手機的像素級對齊
+        // 核心 A4 畫布捕獲：在即時節點上進行無偏差渲染，透過瞬時重排與字型預載，完美相容預覽與正式上線環境
         async function captureA4Canvas() {
           if (document.fonts) {
-            await document.fonts.ready;
+            try {
+              // 確保 Noto Sans TC 中文字型完整就緒，避免正式站因字型載入時差造成 baseline 跑版
+              await document.fonts.load('14px "Noto Sans TC"');
+              await document.fonts.load('700 14px "Noto Sans TC"');
+              await document.fonts.ready;
+            } catch (fontErr) {
+              console.warn('字型預載提示:', fontErr);
+            }
           }
 
           const prevScrollX = window.scrollX;
@@ -2091,16 +2098,22 @@
           const originalShadow = paper.style.boxShadow;
           const origPrintWidth = printArea.style.width;
           const origPrintHeight = printArea.style.height;
+          const origMaxWidth = printArea.style.maxWidth;
 
-          // 1. 暫時將視窗滾動至最頂端 (0, 0)，避免手機或電腦滾動時產生 Canvas 座標位移
-          window.scrollTo(0, 0);
+          // 1. 瞬時回到最頂部 (0, 0)，避免手機或電腦在捲動狀態下產生 Canvas 座標位移
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 
-          // 2. 暫時將容器與紙張還原為標準 794x1123，移除外框與陰影干擾
+          // 2. 暫時將容器與紙張還原為標準 794x1123，移除縮放、陰影與 max-width 限制
+          printArea.style.maxWidth = 'none';
           printArea.style.width = '794px';
           printArea.style.height = '1123px';
           paper.style.transform = 'none';
           paper.style.border = 'none';
           paper.style.boxShadow = 'none';
+
+          // 強制瀏覽器執行同步重排 (Reflow)
+          void paper.offsetHeight;
+          await new Promise(resolve => requestAnimationFrame(resolve));
 
           try {
             const canvas = await html2canvas(paper, {
@@ -2109,19 +2122,18 @@
               backgroundColor: '#ffffff',
               logging: false,
               scrollX: 0,
-              scrollY: 0,
-              windowWidth: 794,
-              windowHeight: 1123
+              scrollY: 0
             });
             return canvas;
           } finally {
-            // 3. 立即無縫還原原畫面與縮放狀態
+            // 3. 立即無縫還原原畫面、縮放與滾動狀態
+            printArea.style.maxWidth = origMaxWidth;
             printArea.style.width = origPrintWidth;
             printArea.style.height = origPrintHeight;
             paper.style.transform = originalTransform;
             paper.style.border = originalBorder;
             paper.style.boxShadow = originalShadow;
-            window.scrollTo(prevScrollX, prevScrollY);
+            window.scrollTo({ top: prevScrollY, left: prevScrollX, behavior: 'instant' });
           }
         }
 
