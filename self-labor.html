@@ -54,6 +54,11 @@
         box-sizing: border-box;
       }
 
+      /* 關鍵修復：覆寫 Tailwind preflight 的 img { display: block }，修復 html2canvas FontMetrics baseline 計算導致所有文字下移/線條上移 25px 的致命 Bug */
+      img {
+        display: inline-block !important;
+      }
+
       /* 全域柔和淡入淡出過渡 (無彈跳 zoom-in-95) */
       button, input, select, textarea, label {
         transition-property: color, background-color, border-color, opacity, box-shadow;
@@ -2084,12 +2089,17 @@
             const targetRenderScale = Math.max(1.5, 2 / (currentScale || 1));
 
             // 直接對眼前無跑版的預覽節點進行快照
-            // 不人為指定 scrollX / scrollY，讓 html2canvas 自行匹配當前滾動座標，杜絕任何位移破版
+            // onclone 中注入 img display: inline-block 確保隔離 iframe 內 FontMetrics baseline 計算 100% 精準
             const canvas = await html2canvas(paper, {
               scale: targetRenderScale,
               useCORS: true,
               backgroundColor: '#ffffff',
-              logging: false
+              logging: false,
+              onclone: (clonedDoc) => {
+                const styleFix = clonedDoc.createElement('style');
+                styleFix.innerHTML = 'img { display: inline-block !important; }';
+                clonedDoc.head.appendChild(styleFix);
+              }
             });
 
             return canvas;
