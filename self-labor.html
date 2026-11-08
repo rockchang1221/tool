@@ -104,10 +104,10 @@
         }
       }
 
-      /* 確保 A4 單據中英文與數字字體統一，防止匯出時文字或數字垂直位移 */
+      /* 確保 A4 單據字體優先使用系統原生高精度字型，杜絕外部字型載入時差或跨域導致之位移 */
       #remuneration-sheet-paper,
       #remuneration-sheet-paper * {
-        font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Microsoft JhengHei', sans-serif !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif !important;
       }
 
       /* 表格欄位嚴格垂直居中對齊 */
@@ -117,22 +117,6 @@
       #remuneration-sheet-paper th,
       #remuneration-sheet-paper td {
         vertical-align: middle !important;
-      }
-
-      /* 表格分區大標題 (領款人基本資料、勞務內容、款項資訊) 精準居中，消除 html2canvas 表頭垂直位移 */
-      .section-th-header {
-        height: 32px !important;
-        padding: 0 !important;
-        vertical-align: middle !important;
-        background-color: #F5F5F7 !important;
-      }
-      .section-th-header > div {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        height: 100% !important;
-        width: 100% !important;
-        line-height: 1 !important;
       }
 
       /* 陰影與自訂滾動條 */
@@ -867,10 +851,10 @@
                       </colgroup>
 
                       <tbody>
-                        <!-- Section 1: 領款人基本資料 (灰色標題欄統一底色 #F5F5F7，字級提升至 14px，精確居中無位移) -->
+                        <!-- Section 1: 領款人基本資料 (灰色標題欄統一底色 #F5F5F7，字級 14px，精確居中無位移) -->
                         <tr>
-                          <th colspan="3" class="section-th-header border border-neutral-600 text-center font-bold text-[14px] text-neutral-900">
-                            <div>領款人基本資料</div>
+                          <th colspan="3" class="bg-[#F5F5F7] border border-neutral-600 py-1.5 px-3 text-center font-bold text-[14px] text-neutral-900">
+                            領款人基本資料
                           </th>
                         </tr>
 
@@ -922,8 +906,8 @@
 
                         <!-- Section 2: 勞務內容 -->
                         <tr>
-                          <th colspan="3" class="section-th-header border border-neutral-600 text-center font-bold text-[14px] text-neutral-900">
-                            <div>勞務內容</div>
+                          <th colspan="3" class="bg-[#F5F5F7] border border-neutral-600 py-1.5 px-3 text-center font-bold text-[14px] text-neutral-900">
+                            勞務內容
                           </th>
                         </tr>
                         <tr>
@@ -955,8 +939,8 @@
 
                         <!-- Section 3: 款項資訊 (左右 4/6 開分割) -->
                         <tr>
-                          <th colspan="3" class="section-th-header border border-neutral-600 text-center font-bold text-[14px] text-neutral-900">
-                            <div>款項資訊</div>
+                          <th colspan="3" class="bg-[#F5F5F7] border border-neutral-600 py-1.5 px-3 text-center font-bold text-[14px] text-neutral-900">
+                            款項資訊
                           </th>
                         </tr>
 
@@ -2078,62 +2062,41 @@
           }, 1000);
         }
 
-        // 核心 A4 畫布捕獲：在即時節點上進行無偏差渲染，透過瞬時重排與字型預載，完美相容預覽與正式上線環境
+        // 核心 A4 畫布捕獲：直接從眼前最正確無跑版的預覽畫面進行高解析度快照
+        // 完全不滾動視窗 (不使用 window.scrollTo)，不修改 live DOM 的 scale 與寬度，保持 100% 所見即所得
         async function captureA4Canvas() {
           if (document.fonts) {
             try {
-              // 確保 Noto Sans TC 中文字型完整就緒，避免正式站因字型載入時差造成 baseline 跑版
-              await document.fonts.load('14px "Noto Sans TC"');
-              await document.fonts.load('700 14px "Noto Sans TC"');
               await document.fonts.ready;
-            } catch (fontErr) {
-              console.warn('字型預載提示:', fontErr);
-            }
+            } catch (fontErr) {}
           }
 
-          const prevScrollX = window.scrollX;
-          const prevScrollY = window.scrollY;
-          const originalTransform = paper.style.transform;
-          const originalBorder = paper.style.border;
-          const originalShadow = paper.style.boxShadow;
-          const origPrintWidth = printArea.style.width;
-          const origPrintHeight = printArea.style.height;
-          const origMaxWidth = printArea.style.maxWidth;
-
-          // 1. 瞬時回到最頂部 (0, 0)，避免手機或電腦在捲動狀態下產生 Canvas 座標位移
-          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-
-          // 2. 暫時將容器與紙張還原為標準 794x1123，移除縮放、陰影與 max-width 限制
-          printArea.style.maxWidth = 'none';
-          printArea.style.width = '794px';
-          printArea.style.height = '1123px';
-          paper.style.transform = 'none';
-          paper.style.border = 'none';
+          // 暫時將外陰影與邊框顏色設為透明（維持 1px border 幾何寬度不變，保證完全無 Layout Reflow）
+          const origShadow = paper.style.boxShadow;
+          const origBorderColor = paper.style.borderColor;
           paper.style.boxShadow = 'none';
-
-          // 強制瀏覽器執行同步重排 (Reflow)
-          void paper.offsetHeight;
-          await new Promise(resolve => requestAnimationFrame(resolve));
+          paper.style.borderColor = 'transparent';
 
           try {
+            // 從預覽紙張目前的 transform: scale(...) 動態計算出能穩定輸出 2x A4 (1588 x 2246) 的高解析倍率
+            const match = paper.style.transform && paper.style.transform.match(/scale\(([^)]+)\)/);
+            const currentScale = match ? parseFloat(match[1]) : 1;
+            const targetRenderScale = Math.max(1.5, 2 / (currentScale || 1));
+
+            // 直接對眼前無跑版的預覽節點進行快照
+            // 不人為指定 scrollX / scrollY，讓 html2canvas 自行匹配當前滾動座標，杜絕任何位移破版
             const canvas = await html2canvas(paper, {
-              scale: 2,
+              scale: targetRenderScale,
               useCORS: true,
               backgroundColor: '#ffffff',
-              logging: false,
-              scrollX: 0,
-              scrollY: 0
+              logging: false
             });
+
             return canvas;
           } finally {
-            // 3. 立即無縫還原原畫面、縮放與滾動狀態
-            printArea.style.maxWidth = origMaxWidth;
-            printArea.style.width = origPrintWidth;
-            printArea.style.height = origPrintHeight;
-            paper.style.transform = originalTransform;
-            paper.style.border = originalBorder;
-            paper.style.boxShadow = originalShadow;
-            window.scrollTo({ top: prevScrollY, left: prevScrollX, behavior: 'instant' });
+            // 立即恢復懸浮紙張的外陰影與邊框顏色
+            paper.style.boxShadow = origShadow;
+            paper.style.borderColor = origBorderColor;
           }
         }
 
