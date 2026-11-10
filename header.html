@@ -1,18 +1,58 @@
-<div class="w-full max-w-full overflow-x-hidden transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-  <div class="w-full bg-[#f8f2a1] py-2.5 px-4 text-center text-xs text-neutral-800 font-medium tracking-wide border-b border-black/5">
-    <a href="https://www.surveycake.com/s/0aVWV" target="_blank" rel="noopener noreferrer" class="text-neutral-800 hover:text-neutral-800 no-underline hover:underline transition-none">找不到需要的工具嗎？點此填寫敲碗表單，讓我幫你做出來！</a>
+<div class="w-full max-w-full overflow-x-hidden transition-all">
+  <!-- 原本的黃色提示頂條 -->
+  <div class="w-full bg-[#f8f2a1] py-2 px-4 text-center text-xs text-gray-800 font-medium tracking-wide">
+    <a href="https://www.surveycake.com/s/0aVWV" target="_blank" rel="noopener noreferrer" class="hover:underline inline-flex items-center gap-1.5 transition-colors">
+      <span>找不到需要的工具嗎？點此填寫敲碗表單，讓我幫你做出來</span>
+      <i class="fa-solid fa-arrow-right text-[10px]"></i>
+    </a>
   </div>
-  <header class="bg-white/85 backdrop-blur-xl border-b border-neutral-200/80">
-    <div class="max-w-[1520px] mx-auto px-4 sm:px-6 h-[44px] flex items-center justify-between gap-4">
+  <header class="bg-white/80 backdrop-blur-xl border-b border-neutral-200/60">
+    <div class="max-w-[1520px] mx-auto px-4 sm:px-6 h-[48px] flex items-center justify-between gap-4">
       <div class="flex items-center shrink-0">
-        <a href="index.html" class="inline-flex items-center hover:opacity-85 transition-opacity" title="返回首頁">
+        <a href="index.html" class="inline-flex items-center hover:opacity-80 transition-opacity" title="返回首頁">
           <img
             src="https://hoodt.store/logo-tool.png"
             alt="Hoodt. Tools"
             class="h-[18px] w-auto object-contain block select-none"
-            onerror="this.onerror=null; this.outerHTML='<span class=\'font-bold text-sm tracking-tight text-neutral-900\'>Hoodt.Tool</span>';"
+            onerror="this.onerror=null; this.outerHTML='<span class=\'font-semibold text-sm tracking-tight text-neutral-900\'>Hoodt.Tool</span>';"
           />
         </a>
+      </div>
+
+      <!-- 右側會員登入/狀態區塊 -->
+      <div id="auth-nav-container" class="flex items-center gap-2 sm:gap-3">
+        <!-- 未登入：會員按鈕 (Apple 極簡膠囊) -->
+        <button
+          id="btn-google-login"
+          type="button"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-neutral-800 bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 transition-colors cursor-pointer"
+          title="使用 Google 帳號登入"
+        >
+          <i class="fa-regular fa-user text-neutral-500 text-xs"></i>
+          <span>登入</span>
+        </button>
+
+        <!-- 已登入：顯示使用者頭像、名稱與登出按鈕 -->
+        <div id="user-profile-section" class="hidden items-center gap-2 sm:gap-3">
+          <div class="flex items-center gap-2">
+            <img
+              id="user-avatar"
+              src=""
+              alt="頭像"
+              class="w-6 h-6 rounded-full object-cover ring-1 ring-neutral-200 hidden"
+            />
+            <span id="user-display-name" class="text-xs font-medium text-neutral-900 max-w-[90px] sm:max-w-[140px] truncate">
+              會員
+            </span>
+          </div>
+          <button
+            id="btn-logout"
+            type="button"
+            class="text-xs text-neutral-400 hover:text-neutral-900 transition-colors cursor-pointer"
+          >
+            登出
+          </button>
+        </div>
       </div>
     </div>
   </header>
