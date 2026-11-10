@@ -23,6 +23,40 @@ const FALLBACK_HEADER = `
           />
         </a>
       </div>
+
+      <!-- 右側會員登入/狀態區塊 -->
+      <div id="auth-nav-container" class="flex items-center gap-2 sm:gap-3">
+        <button
+          id="btn-google-login"
+          type="button"
+          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-neutral-700 bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 transition-colors cursor-pointer border border-neutral-200"
+          title="使用 Google 帳號登入"
+        >
+          <i class="fa-regular fa-user text-neutral-600 text-xs"></i>
+          <span>登入</span>
+        </button>
+
+        <div id="user-profile-section" class="hidden items-center gap-2 sm:gap-3">
+          <div class="flex items-center gap-1.5">
+            <img
+              id="user-avatar"
+              src=""
+              alt="頭像"
+              class="w-5 h-5 rounded-full object-cover border border-neutral-300 hidden"
+            />
+            <span id="user-display-name" class="text-xs font-medium text-neutral-800 max-w-[90px] sm:max-w-[140px] truncate">
+              會員
+            </span>
+          </div>
+          <button
+            id="btn-logout"
+            type="button"
+            class="text-xs text-neutral-500 hover:text-neutral-900 underline decoration-neutral-300 underline-offset-2 transition-colors cursor-pointer"
+          >
+            登出
+          </button>
+        </div>
+      </div>
     </div>
   </header>
 </div>
@@ -32,11 +66,15 @@ const FALLBACK_FOOTER = `
 <footer class="no-print mt-8 border-t border-gray-200 py-6 text-sm text-gray-500">
   <div class="max-w-[1520px] mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 text-left">
     <div>
-      Copyright © 2026 Hoodt.Tool線上工具箱 版權所有
+      Copyright © 2026 Hoodt.Tool 線上工具箱 版權所有
     </div>
     <div class="flex items-center gap-2">
       <a href="terms.html" target="_blank" rel="noopener noreferrer" class="hover:text-gray-800 transition-colors">
         使用條款
+      </a>
+      <div>｜</div>
+      <a href="mailto:hoodtstore@gmail.com" rel="noopener noreferrer" class="hover:text-gray-800 transition-colors">
+        與我聯絡
       </a>
       <div>｜</div>
       <div class="relative group inline-flex items-center">
@@ -147,6 +185,10 @@ async function loadPartial(placeholderId, filePath, fallbackHtml) {
     if (!container.innerHTML.trim() && fallbackHtml) {
       container.innerHTML = fallbackHtml;
     }
+  }
+
+  if (placeholderId === 'header-placeholder') {
+    window.dispatchEvent(new CustomEvent('hoodt:header-loaded'));
   }
 }
 
