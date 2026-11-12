@@ -1,3 +1,20 @@
-https://tool.hoodt.store/ 2026-11-10T16:15:31+00:00 1.0000
-https://tool.hoodt.store/index.html 2026-11-10T16:15:31+00:00 0.6400
-https://tool.hoodt.store/terms.html 2026-11-10T16:15:31+00:00 0.6400
+<?xml version="1.0" encoding="UTF-8"?>
+
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <url>
+       <loc>https://tool.hoodt.store/</loc>
+       <lastmod>2026-11-12T03:23:17+00:00</lastmod>
+       <priority>1.0000</priority>
+  </url>
+  <url>
+       <loc>https://tool.hoodt.store/index.html</loc>
+       <lastmod>2026-11-12T03:23:17+00:00</lastmod>
+       <priority>0.6400</priority>
+  </url>
+  <url>
+       <loc>https://tool.hoodt.store/terms.html</loc>
+       <lastmod>2026-11-12T03:23:17+00:00</lastmod>
+       <priority>0.6400</priority>
+  </url>
+</urlset>
